@@ -7,6 +7,7 @@ notifications:
   on_success: always
   on_failure: always
 before_script:
+- echo "pre_build"
 - "./travis/pre_build.sh"
 - export DEBIAN_FRONTEND=noninteractive; sudo -E apt-get -y  install python3-pip python-dev
 - sudo pip3 install --upgrade setuptools
@@ -17,3 +18,4 @@ after_success:
 - "./travis/package.sh"
 before_install:
 - pwd
+

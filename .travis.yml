@@ -1,4 +1,5 @@
 language: python
+dist: xenail
 sudo: required
 notifications:
   email:

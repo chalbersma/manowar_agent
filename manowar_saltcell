@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+
+'''
+manowar_saltcell
+
+A cli agent to help run the saltcell agent. Handles reding configs from file and printing and shit.
+'''
+
+# Salt Cell
+
+import yaml
+import jq
+import requests
+import sys
+import argparse
+import logging
+import json
+
+#import salt.config
+#import salt.client
+
+from saltcell.clientcollector import Host
+
+#
+# Process
+# 1. Grab Configs
+# 1. Grab Collection Configuration
+# 1. Do Collection
+# 1. Submit Results
+#
+#
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", help="Stingcell Config File (Default /etc/saltcell/saltcell.yaml)", default="/etc/saltcell/saltcell.yaml")
+    parser.add_argument("-p", "--print", help="Print stingcell json to stdout in addition to sending it along.", action='store_true')
+    parser.add_argument("-n", "--noupload", help="Do not upload results to endoint.", action='store_true')
+    parser.add_argument("-v", "--verbose", action='append_const', help="Turn on Verbosity", const=1, default=[])
+    parser._optionals.title = "DESCRIPTION "
+
+    # Parser Args
+    args = parser.parse_args()
+
+    VERBOSE = len(args.verbose)
+
+    if VERBOSE == 0:
+        logging.basicConfig(level=logging.ERROR)
+
+    elif VERBOSE == 1:
+        logging.basicConfig(level=logging.WARNING)
+
+    elif VERBOSE == 2:
+        logging.basicConfig(level=logging.INFO)
+
+    else:
+        logging.basicConfig(level=logging.DEBUG)
+
+    logger = logging.getLogger("saltcell.py")
+
+    logger.info("Welcome to Saltcell")
+
+    with open(args.config, "r") as config_file:
+        try:
+            configs = yaml.safe_load(config_file)
+        except yaml.YAMLError as parse_error:
+            print("Unable to parse file {} with error : \n {}".format(args.config, parse_error))
+            sys.exit(1)
+
+    if args.print:
+        PRINT = True
+    else:
+        PRINT = False
+
+    if args.noupload:
+        NOUPLOAD = True
+    else:
+        NOUPLOAD = False
+
+
+def docoll(config_items=False, noupload=False) :
+
+    logger = logging.getLogger("saltcell.docoll")
+
+
+    '''
+    Do the Collection
+    '''
+
+    # Step 2 Grab Collection Configuration
+    collection_configuration_file = config_items["stingcell"]["collection_config_file"]
+
+    this_host = Host(minion_file=config_items["salt"].get("minion_file", "minion"), \
+                     base_config_file=config_items["stingcell"]["collection_config_file"], \
+                     local_cols=(config_items["stingcell"].get("local_collections", False), \
+                                 config_items["stingcell"].get("local_collections_location", "/etc/stingcell/collections.d")),
+                     host_configs=config_items["hostinfo"],
+                     ipintel_configs=config_items["ipintel"],
+                     noupload=NOUPLOAD,
+                     sapi_configs=config_items.get("sapi", {"sapi_do_api" : False}))
+
+    return results
+
+
+
+if __name__ == "__main__":
+    collection_data = docoll(config_items=configs)
+
+    if PRINT == True:
+        sys.stdout.write(json.dumps(collection_data), default=str)

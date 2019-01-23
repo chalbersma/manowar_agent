@@ -1,0 +1,19 @@
+language: python
+sudo: required
+notifications:
+  email:
+    recipients:
+    - chris+manowar_agent@halbersma.us
+  on_success: always
+  on_failure: always
+before_script:
+- "./travis/pre_build.sh"
+- export DEBIAN_FRONTEND=noninteractive; sudo -E apt-get -y  install python3-pip python-dev
+- sudo pip3 install --upgrade setuptools
+- sudo pip3 install -r requirements.txt
+script:
+- "./travis/testing.sh"
+after_success:
+- "./travis/package.sh"
+before_install:
+- pwd

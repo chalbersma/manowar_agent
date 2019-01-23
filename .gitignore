@@ -102,3 +102,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+/bin/
+/.kdev4/manowar_agent.kdev4
+/include
+/share/
+/manowar_agent.kdev4

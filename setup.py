@@ -16,10 +16,7 @@ else:
     travis_branch = os.environ.get("TRAVIS_BRANCH", "UNKNOWN")
     travis_event_type = os.environ.get("TRAVIS_EVENT_TYPE", "UNKNOWN")
 
-    print(current_branch, travis_repo, travis_branch, travis_event_branch)
-    sys.exit(0)
-
-
+    print(current_branch, travis_repo, travis_branch, travis_event_type)
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -28,7 +25,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="stingcell",
-    version=,
+    version="0.0.0",
     author="Chris Halbersma",
     author_email="chris+manowar@halbersma.us",
     description="Package to Add as a Collector",

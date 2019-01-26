@@ -18,7 +18,7 @@ before_script:
 script:
 - "./travis/testing.sh"
 after_success:
-- "./travis/package.sh"
+- "./travis/packages.sh"
 before_install:
 - pwd
 

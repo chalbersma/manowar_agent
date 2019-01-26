@@ -11,12 +11,16 @@ if current_repo.bare:
     print("Something went wrong Repo is Bare, Failing the Build.")
     sys.exit(1)
 else:
-    current_branch = current_repo.active_branch.name
     travis_repo = os.environ.get("TRAVIS_REPO_SLUG", "NOTRAVIS")
+    travis_pull_req = os.environ.get("TRAVIS_PULL_REQUEST", "UNKNOWN")
     travis_branch = os.environ.get("TRAVIS_BRANCH", "UNKNOWN")
     travis_event_type = os.environ.get("TRAVIS_EVENT_TYPE", "UNKNOWN")
 
-    print(current_branch, travis_repo, travis_branch, travis_event_type)
+    print(travis_repo)
+    print(travis_pull_req)
+    print(travis_branch)
+    print(travis_event_type)
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
 
 echo -e "Python3 Build Instruction (Future Stuff)."
 

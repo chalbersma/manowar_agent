@@ -11,6 +11,14 @@ if current_repo.bare:
     print("Something went wrong Repo is Bare, Failing the Build.")
     sys.exit(1)
 else:
+
+    env_keys = dict(os.environ).keys()
+
+    travis_keys = [ key for key in env_keys if key.startswith("TRAVIS") ]
+
+    for key in travis_keys:
+        print("{} : {}".format(key, os.environ[key]))
+
     travis_repo = os.environ.get("TRAVIS_REPO_SLUG", "NOTRAVIS")
     travis_pull_req = os.environ.get("TRAVIS_PULL_REQUEST", "UNKNOWN")
     travis_branch = os.environ.get("TRAVIS_BRANCH", "UNKNOWN")
@@ -23,6 +31,7 @@ else:
 
 # Set Default Version
 version = "0.0.0"
+upload_to_pypi = False
 
 # My Known Good Repository
 if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_event_type == "tag":

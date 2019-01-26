@@ -21,6 +21,15 @@ else:
     print(travis_branch)
     print(travis_event_type)
 
+# Set Default Version
+version = "0.0.0"
+
+# My Known Good Repository
+if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_event_type == "tag":
+    # Make a Version Fix here that equls the tag
+    print("We're working with a Tag.")
+    pass
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

@@ -23,18 +23,14 @@ else:
     travis_pull_req = os.environ.get("TRAVIS_PULL_REQUEST", "UNKNOWN")
     travis_branch = os.environ.get("TRAVIS_BRANCH", "UNKNOWN")
     travis_event_type = os.environ.get("TRAVIS_EVENT_TYPE", "UNKNOWN")
-
-    print(travis_repo)
-    print(travis_pull_req)
-    print(travis_branch)
-    print(travis_event_type)
+    travis_tag = os.environ.get("TRAVIS_TAG", False)
 
 # Set Default Version
 version = "0.0.0"
 upload_to_pypi = False
 
 # My Known Good Repository
-if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_event_type == "tag":
+if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_tag is not False:
     # Make a Version Fix here that equls the tag
     print("We're working with a Tag.")
     pass

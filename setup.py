@@ -33,6 +33,7 @@ upload_to_pypi = False
 if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_tag is not False:
     # Make a Version Fix here that equls the tag
     print("We're working with a Tag.")
+    print(travis_tag)
     pass
 
 

@@ -28,7 +28,7 @@ else:
     travis_pull_req = os.environ.get("TRAVIS_PULL_REQUEST", "UNKNOWN")
     travis_branch = os.environ.get("TRAVIS_BRANCH", "UNKNOWN")
     travis_event_type = os.environ.get("TRAVIS_EVENT_TYPE", "UNKNOWN")
-    travis_tag = os.environ.get("TRAVIS_TAG", False)
+    travis_tag = os.environ.get("TRAVIS_TAG", "")
     travis_build_no = os.environ.get("TRAVIS_BUILD_NUMBER", 0)
 
     print(travis_build_no)
@@ -38,7 +38,7 @@ version = "0.0.0"
 upload_to_pypi = False
 
 # My Known Good Repository
-if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_tag is not False and len(travis_tag) > 0:
+if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and len(travis_tag) > 0:
     # Make a Version Fix here that equls the tag
     print("Tagged Branch : {}".format(travis_tag))
     version = travis_tag

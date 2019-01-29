@@ -72,7 +72,7 @@ with open("README.md", "r") as fh:
 # Get Version
 
 setuptools.setup(
-    name="stingcell",
+    name="manowar_agent",
     version=version,
     author="Chris Halbersma",
     author_email="chris+manowar@halbersma.us",

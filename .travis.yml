@@ -1,6 +1,6 @@
 language: python
 python:
-  - 3.6
+- 3.6
 dist: xenail
 sudo: required
 notifications:
@@ -12,7 +12,8 @@ notifications:
 before_script:
 - echo "pre_build"
 - "./travis/pre_build.sh"
-- export DEBIAN_FRONTEND=noninteractive; sudo -E apt-get -y  install python3-pip python-dev openjdk-8-jre
+- export DEBIAN_FRONTEND=noninteractive; sudo -E apt-get -y  install python3-pip python-dev
+  openjdk-8-jre
 - sudo pip3 install --upgrade setuptools
 - sudo pip3 install -r requirements.txt
 script:
@@ -21,4 +22,7 @@ after_success:
 - "./travis/packages.sh"
 before_install:
 - pwd
-
+env:
+  matrix:
+  - secure: cECZYLH7ZsRVHKVFM6FtF59Zk0T3Bs4BVw1tHin5mPFrODf5zQdDmSSzfoZloFyCG4gEVHXVHMJ7LMHSyjTqpFRq5rq0kSTYC4/HunUclIVKcFNKEM8dr09V7M1vRpA52GEiaiE/0FA2A7PACVYlkHOEBtWo63MvH80AJG0P0y9y5MaYAuexImJ7D0RwTG9uWkEFUU/njqtrJTK3/6HQ2R7gvWwINus9LWKL67DcUjVidtZWJiYeDkUgxIA17OR1u4YkAFfdFDTW4oSI7t8GqX6NYvCGWoYjYbZhCDP68cFRQIwQF9bLWT5BLnvMbHbQ0fSXPjlmiZd9HqDt8EfKo/YRBAga5Mfbqa5W2eWIt+O86r8kpjHhRkNrnd5CpIpLEbKBuzFI6z0sxJZm0DlLAFVHDV52ae6HXMxfdb6tailsqm0qZIrraAqBxSsBb0IzGipxp/UX2Tv0BAQjGgv3mhr/E/UnHs+GonPqAzFXnhnT0LBDY/oJ9yZy7UGtaSVPEiYkz74cJ3kGg2mXGVOEC8s6+h69Zvyv16kKooNAyumIygfXQWVmn46Z0mmgt52VJECqaCGjUBmy55L35qMW+uUfhapaHte7qComHvWNwwz3d7TJyhhuXOYcDDCuqyE05QenC3BS+9FXJsAWM441ujw95bz8YYpohjUPt8XEskg=
+  - secure: X4HGohCyXY550VmAOxJJGREr3TUoOAzEOXp1nACb+E4h0pahM3IG98Hm7xqL4M1vKO0rkDMH/VRKA6i5cG7Jxowu0u4qi90V0befmjHScCBTqmnrEl+l/LihQyi52krAnFHGFBiT0Uey1QpP/jEhR+yRCefG73814OkGvEXjH6D/ctrge6VcrmNMiIXhyXpGJyCpA+F9l7DpeWBwOlyQrEnAelkXnTNOxbJIz+0IxSl6Rr7xq+m0Ec638vTF+wSt8Iwsf4DKA8S+jWHzYhDHHN69ifjLkyqcsTkuIGy+Ntvm5Y8B7XFym6jZiFVAcWVgbc4igwvQsVDqo9hE+HS5DbSpXs/jZCqsu/Rkny5KiQNw/1TKuXfeMmAJ7TaSnChklyvI4lgWMY7Wno9DSt9hHzxkzsEus9u3Kuy4wGxHL4tOyjP+cLbNM9wsWU4bu7RhbBaLxd1mnmBJRqNqnepSQNqoRJqxC01STF4jFALbFzEM5isQ4+/MvjnzSQ+S9JPTOWtEkOKXioKn/rA/SHGRxIYA9RariUejtzsTxBPMUElZV9U6Qa5l5Bk4mIqT8VghFxrWLRXD025ZMqIpxRyYM6dWa0kC4tW/MgSOWt1tC6gSEIsCduPSncOKiiBMppUY7gFl56bl6+BX/nUhW1IhuGsdM4GPM9POy11b6jSbfxs=

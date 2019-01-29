@@ -38,7 +38,7 @@ version = "0.0.0"
 upload_to_pypi = False
 
 # My Known Good Repository
-if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_tag is not False:
+if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and travis_tag is not False and len(travis_tag) > 0:
     # Make a Version Fix here that equls the tag
     print("Tagged Branch : {}".format(travis_tag))
     version = travis_tag
@@ -46,7 +46,10 @@ if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and t
 elif travis_repo == "chalbersma/manowar_agent":
     # This is in my repo and
     version = "0.0.{}".format(travis_build_no)
+    print("VERSION : {}".format(version))
     upload_to_pypi = "stag"
+else:
+    upload_to_pypi = False
 
 if upload_to_pypi is not False and upload_to_pypi == "stag":
     os.environ["TWINE_USERNAME"] = os.environ.get("PYPI_STAG_UNAME", "whoidit")

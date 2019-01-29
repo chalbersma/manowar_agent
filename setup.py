@@ -8,7 +8,7 @@ import setuptools
 import sys
 import os
 import git
-import subprocess
+import subprocess # nosec
 
 current_repo = git.Repo()
 
@@ -96,7 +96,7 @@ if upload_to_pypi is not False:
 
     print("Attempting to Upload to PyPi : {}".format(upload_to_pypi))
 
-    result = subprocess.check_call(twine_cmd)
+    result = subprocess.check_call(twine_cmd) # nosec
 
     print("Result : {}".format(result))
 else:

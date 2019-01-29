@@ -15,8 +15,8 @@ before_script:
 - "./travis/pre_build.sh"
 - export DEBIAN_FRONTEND=noninteractive; sudo -E apt-get -y  install python3-pip python-dev
   openjdk-8-jre
-- sudo pip3 install --upgrade setuptools
-- sudo pip3 install -r requirements.txt
+- pip3 install --upgrade setuptools
+- pip3 install -r requirements.txt
 script:
 - "./travis/testing.sh"
 after_success:

@@ -95,7 +95,7 @@ setuptools.setup(
         "requests",
         "salt"
     ],
-    scripts=["manowar_saltcell"]
+    scripts=["manowar_agent"]
 )
 
 if upload_to_pypi is not False:

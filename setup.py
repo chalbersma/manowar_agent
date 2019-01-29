@@ -31,6 +31,8 @@ else:
     travis_tag = os.environ.get("TRAVIS_TAG", False)
     travis_build_no = os.environ.get("TRAVIS_BUILD_NUMBER", 0)
 
+    print(travis_build_no)
+
 # Set Default Version
 version = "0.0.0"
 upload_to_pypi = False
@@ -59,6 +61,7 @@ else:
     pass
 
 
+print("VERSION : {}".format(version))
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

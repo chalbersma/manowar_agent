@@ -79,7 +79,8 @@ setuptools.setup(
         "Development Status :: 2 - Pre-Alpha",
         "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: BSD License",
-        "Operating System :: OS Independent"
+        "Operating System :: OS Independent",
+        "Topic :: Security"
     ],
     install_requires=[
         "Jinja2",

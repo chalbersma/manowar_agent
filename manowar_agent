@@ -98,12 +98,10 @@ def docoll(config_items=False, noupload=False) :
                      noupload=NOUPLOAD,
                      sapi_configs=config_items.get("sapi", {"sapi_do_api" : False}))
 
-    return results
-
-
+    return this_host.todict()
 
 if __name__ == "__main__":
     collection_data = docoll(config_items=configs)
 
     if PRINT == True:
-        sys.stdout.write(json.dumps(collection_data), default=str)
+        sys.stdout.write(json.dumps(collection_data, default=str))

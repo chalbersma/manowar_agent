@@ -95,7 +95,7 @@ setuptools.setup(
         "requests",
         "salt"
     ],
-    scripts=["manowar_agent"]
+    scripts=["manowar_agent"],
     datafiles=["etc/manowar_agent/collector.yaml", "etc/manowar_agent/minion", "etc/manowar_agent/saltcell.yaml"]
 )
 

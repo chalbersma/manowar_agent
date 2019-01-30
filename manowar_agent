@@ -79,12 +79,12 @@ if __name__ == "__main__":
 
 def docoll(config_items=False, noupload=False) :
 
+    '''
+    docoll Does the actual collection fo the things
+    '''
+
     logger = logging.getLogger("saltcell.docoll")
 
-
-    '''
-    Do the Collection
-    '''
 
     # Step 2 Grab Collection Configuration
     collection_configuration_file = config_items["stingcell"]["collection_config_file"]

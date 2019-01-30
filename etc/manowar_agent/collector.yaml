@@ -1,7 +1,5 @@
 manowar_version: 3
 
-minion_config: minion
-
 collections:
   packages:
     salt: true
@@ -121,7 +119,7 @@ collections:
     saltfactor: "grains.get"
     saltargs: ["locale_info"]
     saltkwargs: {}
-    jq_parse: '[ to_entries | .[] | { (.key) : (.value| tostring ) }] | add'
+    jq_parse: '.'
   virtual:
     salt: true
     multi: false

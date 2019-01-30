@@ -73,31 +73,34 @@ class Host:
             # It's Turned on
             post_data = this_host.todict()
 
-            endpoint = self.sapi_configs["sapi_endpoint"]
+            for this_endpoint in self.sapi_configs["sapi_endpoints"]:
 
-            headers = dict()
+                url = this_endpoint.get("url", False)
+                name = this_endpoint.get("name", url)
 
-            if "sapi_token" in self.sapi_configs.keys() and "sapi_username" in self.sapi_configs.keys():
-                headers["Authorization"] = "{}:{}".format(str(self.sapi_config["sapi_username"], self.sapi_config["sapi_token"]))
-            else:
-                self.logger.warning("sapi_username and/or sapi_token not set in config. No Auth added (normally).")
+                headers = dict()
 
-            headers.update(self.sapi_configs.get("custom_headers", {}))
-
-            query_args = dict()
-            query_args.update(self.sapi_configs.get("custom_query_args", {}))
-
-            try:
-                post_request = request.post(endpoint, data=post_data, headers=headers, params=query_args)
-            except Exception as upload_exception:
-                self.logger.error("Unable to Upload to endpoint : {} with error : {}".format(endpoint, str(upload_exception)))
-            else:
-                response_code = post_request.status_code
-                if response_code == 200:
-                    if verbose == True:
-                        self.logger.info("Data Successfully Posted to : {}".format(endpoint))
+                if "sapi_token" in this_endpoint.keys() and "sapi_username" in this_endpoint.keys():
+                    headers["Authorization"] = "{}:{}".format(str(this_endpoint["sapi_username"], this_endpoint["sapi_token"]))
                 else:
-                    self.logger.warning("Data posted to : {} but returned status code {} ".format(url, response_code))
+                    self.logger.warning("sapi_username and/or sapi_token not set in config. No Auth added (normally).")
+
+                headers.update(this_endpoint.get("custom_headers", {}))
+
+                query_args = dict()
+                query_args.update(this_endpoint.get("custom_query_args", {}))
+
+                try:
+                    post_request = request.post(url, data=post_data, headers=headers, params=query_args)
+                except Exception as upload_exception:
+                    self.logger.error("Unable to Upload to endpoint : {} with error : {}".format(name, str(upload_exception)))
+                else:
+                    response_code = post_request.status_code
+                    if response_code == 200:
+                        if verbose == True:
+                            self.logger.info("Data Successfully Posted to : {}".format(name))
+                    else:
+                        self.logger.warning("Data posted to : {} but returned status code {} ".format(name, response_code))
 
         return
 
@@ -167,6 +170,8 @@ class Host:
             this_find = self.salt_caller.function(collection["saltfactor"], \
                                             *collection["saltargs"], \
                                             **collection["saltkwargs"])
+
+            self.logger.debug("Results for {} : \n{}".format(cname, json.dumps(this_find)))
 
             if is_multi:
                 # Multi so do the JQ bits

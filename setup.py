@@ -96,7 +96,7 @@ setuptools.setup(
         "salt"
     ],
     scripts=["manowar_agent"],
-    datafiles=[("etc/manowar", ["etc/manowar_agent/collector.yaml", "etc/manowar_agent/minion", "etc/manowar_agent/saltcell.yaml"])]
+    data_files=[("etc/manowar", ["etc/manowar_agent/collector.yaml", "etc/manowar_agent/minion", "etc/manowar_agent/saltcell.yaml"])]
 )
 
 if upload_to_pypi is not False:

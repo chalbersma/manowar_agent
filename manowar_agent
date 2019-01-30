@@ -32,7 +32,7 @@ from saltcell.clientcollector import Host
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", help="Stingcell Config File (Default /etc/saltcell/saltcell.yaml)", default="/etc/saltcell/saltcell.yaml")
+    parser.add_argument("-c", "--config", help="Stingcell Config File (Default etc/manowar_agent/saltcell.yaml)", default="etc/manowar_agent/saltcell.yaml")
     parser.add_argument("-p", "--print", help="Print stingcell json to stdout in addition to sending it along.", action='store_true')
     parser.add_argument("-n", "--noupload", help="Do not upload results to endoint.", action='store_true')
     parser.add_argument("-v", "--verbose", action='append_const', help="Turn on Verbosity", const=1, default=[])

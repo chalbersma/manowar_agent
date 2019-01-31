@@ -34,7 +34,7 @@ else:
     print(travis_build_no)
 
 # Set Default Version
-version = "0.0.0"
+version = "0.3.0"
 upload_to_pypi = False
 
 
@@ -46,7 +46,7 @@ if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and l
     upload_to_pypi = "prod"
 elif travis_repo == "chalbersma/manowar_agent":
     # This is in my repo and
-    version = "0.0.{}".format(travis_build_no)
+    version = "0.3.{}".format(travis_build_no)
     print("VERSION : {}".format(version))
     upload_to_pypi = "stag"
 else:

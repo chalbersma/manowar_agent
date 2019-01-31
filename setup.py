@@ -63,7 +63,7 @@ if upload_to_pypi is not False and upload_to_pypi == "stag":
     os.environ["TWINE_USERNAME"] = os.environ.get("PYPI_STAG_UNAME", "whoidit")
     os.environ["TWINE_PASSWORD"] = os.environ.get("PYPI_STAG_PASSWD", "whasit")
     twine_cmd = ["twine", "upload", "--repository-url", "https://test.pypi.org/legacy/", "dist/*"]
-elif upload_to_pypi is not False and upload_to_pypi == "stag":
+elif upload_to_pypi is not False and upload_to_pypi == "prod":
     os.environ["TWINE_USERNAME"] = os.environ.get("PYPI_PROD_UNAME", "whoidit")
     os.environ["TWINE_PASSWORD"] = os.environ.get("PYPI_PROD_PASSWD", "whasit")
     twine_cmd = ["twine", "upload", "dist/*"]

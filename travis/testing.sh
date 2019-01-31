@@ -31,3 +31,6 @@ for file in ${python_files} ; do
 
 done
 
+
+################# Run Manowar in this Version to test ###################
+./manowar_agent -v -c etc/manowar_agent/saltcell.yaml --print

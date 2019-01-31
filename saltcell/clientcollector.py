@@ -268,6 +268,8 @@ class Host:
 
         # Get Local Addresses
         ipa_object = list()
+        self.logger.info(self.collection_info)
+        self.logger.info(self.collection_info.keys())
         ipa_object.extend(list(self.collection_info.get("ipv4_addr", {}).keys()))
         ipa_object.extend(list(self.collection_info.get("ipv6_addr", {}).keys()))
 

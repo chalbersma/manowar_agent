@@ -177,7 +177,11 @@ class Host:
                 # Multi so do the JQ bits
                 parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
 
-                results_dictionary[cname] = parsed_result
+                if parsed_result is None:
+                    # No Results
+                    results_dictionary[cname] = {"none":"none"}
+                else:
+                    results_dictionary[cname] = parsed_result
             else:
                 # Not Multi the whole thing goes
                 results_dictionary[cname]["default"] = str(this_find)

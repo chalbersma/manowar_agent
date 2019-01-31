@@ -33,4 +33,4 @@ done
 
 
 ################# Run Manowar in this Version to test ###################
-./manowar_agent -vvv -c etc/manowar_agent/saltcell.yaml --print
+./manowar_agent -v -c etc/manowar_agent/saltcell.yaml --print

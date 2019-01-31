@@ -9,6 +9,7 @@ import sys
 import os
 import git
 import subprocess # nosec
+import datetime
 
 current_repo = git.Repo()
 
@@ -34,23 +35,24 @@ else:
     print(travis_build_no)
 
 # Set Default Version
-version = "0.3.0"
+version_base = datetime.datetime.today().strftime("%Y.%m.%d")
 upload_to_pypi = False
 
 
 # My Known Good Repository
-if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and len(travis_tag) > 0:
+if travis_repo == "chalbersma/manowar_agent" and len(travis_tag) > 0:
     # Make a Version Fix here that equls the tag
     print("Tagged Branch : {}".format(travis_tag))
     version = travis_tag
     upload_to_pypi = "prod"
 elif travis_repo == "chalbersma/manowar_agent":
     # This is in my repo and
-    version = "0.3.{}".format(travis_build_no)
+    version = "{}-{}".format(version_base, travis_build_no)
     print("VERSION : {}".format(version))
     upload_to_pypi = "stag"
 else:
     upload_to_pypi = False
+    version = "{}-0".format(version_base)
 
 # Only upload on 3.6.x Matrix
 if "3.6" != "{}.{}".format(sys.version_info[0], sys.version_info[1]):

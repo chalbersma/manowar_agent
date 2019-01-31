@@ -37,6 +37,7 @@ else:
 version = "0.0.0"
 upload_to_pypi = False
 
+
 # My Known Good Repository
 if travis_repo == "chalbersma/manowar_agent" and travis_branch == "master" and len(travis_tag) > 0:
     # Make a Version Fix here that equls the tag
@@ -49,6 +50,11 @@ elif travis_repo == "chalbersma/manowar_agent":
     print("VERSION : {}".format(version))
     upload_to_pypi = "stag"
 else:
+    upload_to_pypi = False
+
+# Only upload on 3.6.x Matrix
+if "3.6" != "{}.{}".format(sys.version_info[0], sys.version_info[1]):
+    print("Version is : {} which doesn't equal 3.6.x not uploading".format(sys.version_info))
     upload_to_pypi = False
 
 if upload_to_pypi is not False and upload_to_pypi == "stag":

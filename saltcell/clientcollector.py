@@ -269,7 +269,7 @@ class Host:
         # Get Local Addresses
         ipa_object = list()
         ipa_object.extend(list(self.collection_info.get("ipv4_addr", {}).keys()))
-        ipa_object.extend(list(self.collection_info("ipv6_addr", {}).keys()))
+        ipa_object.extend(list(self.collection_info.get("ipv6_addr", {}).keys()))
 
 
         self.logger.info("Raw Intel Object for this Host : \n{}".format(ipa_object))

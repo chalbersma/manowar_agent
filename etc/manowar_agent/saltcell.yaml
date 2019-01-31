@@ -23,7 +23,7 @@ stingcell:
   default_collection_timeout: 60
   local_collections: false
   local_collections_location: /etc/manowar_agent/collections.d/
-  collection_config_file: etc/manowar_agent/collector.yaml.sample
+  collection_config_file: etc/manowar_agent/collector.yaml
 ipintel:
   dointel: true
 version: 3

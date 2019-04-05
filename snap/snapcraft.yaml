@@ -16,6 +16,7 @@ parts:
     python-version: python3
     source: .
     build-packages:
+      - automake
       - autoconf
       - libtool
       - git

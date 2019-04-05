@@ -41,3 +41,7 @@ parts:
       - virtualenv-tools
       - bandit
       - twine
+ 
+apps:
+  manowar_agent:
+    command: bin/manowar_agent

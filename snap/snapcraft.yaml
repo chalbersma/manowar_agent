@@ -20,7 +20,11 @@ parts:
       - autoconf
       - libtool
       - git
+      - libzbar-dev
+      - libzbar0
+      - python3-dev
     python-packages:
+      - typed-ast<1.2.0,>=1.1.0
       - certifi
       - pylint
       - chardet
@@ -41,3 +45,7 @@ parts:
       - virtualenv-tools
       - bandit
       - twine
+ 
+apps:
+  manowar_agent:
+    command: bin/manowar_agent

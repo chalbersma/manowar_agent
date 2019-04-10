@@ -24,6 +24,7 @@ parts:
       - libzbar0
       - python3-dev
     python-packages:
+      - typed-ast<1.2.0,>=1.1.0
       - certifi
       - pylint
       - chardet

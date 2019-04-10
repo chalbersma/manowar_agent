@@ -47,5 +47,5 @@ parts:
       - twine
  
 apps:
-  manowar_agent:
+  manowar-agent:
     command: bin/manowar_agent

@@ -22,6 +22,7 @@ parts:
       - git
       - libzbar-dev
       - libzbar0
+      - python3-dev
     python-packages:
       - certifi
       - pylint

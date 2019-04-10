@@ -20,6 +20,8 @@ parts:
       - autoconf
       - libtool
       - git
+      - libzbar-dev
+      - libzbar0
     python-packages:
       - certifi
       - pylint

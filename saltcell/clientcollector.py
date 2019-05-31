@@ -6,14 +6,17 @@ A ClientSide Collector
 
 import socket
 import time
-
 import json
-
 import ipaddress
 import logging
-import jq
+import os
+import sys
+
 import yaml
 import requests
+import jq
+
+import saltcell.mown
 
 class Host:
 
@@ -37,7 +40,7 @@ class Host:
 
         self.host_configs = host_configs
 
-        self.logger.info("Read Information :\n{}".format(self.base_config_file))
+        self.mown = self.gethostmeta()
 
         self.collection_info = self.getall_collections()
 
@@ -48,12 +51,21 @@ class Host:
         self.sapi_configs = sapi_configs
 
         if self.ipintel_configs.get("dointel", False) is True:
+            self.logger.debug("Collecting IP Intel.")
             self.myipintel = self.ipintel()
         else:
             # Empty
+            self.logger.warning("Not attempting to collect IP Intel.")
             self.myipintel = list()
 
+        # Now Try to Upload
+        self.eval_upload()
+
     def todict(self):
+
+        '''
+        Returns Dictionary of my Data
+        '''
 
         return_dict = {"collection_data" : self.collection_info,
                        "ip_intel" : self.myipintel,
@@ -63,15 +75,21 @@ class Host:
 
     def eval_upload(self):
 
+        '''
+        Evaluates and does the endpoint stuff
+        '''
+
+        response_code = False
+
         if self.noupload_runtime:
-            self.logger.info("Not uploading as noupload option specified at runtime, ignoring confiuration.")
+            self.logger.warning("Not uploading as noupload option specified at runtime, ignoring confiuration.")
         elif isinstance(self.sapi_configs, dict) and self.sapi_configs.get("sapi_do_api", False) is False:
-            self.logger.info("Not Uploading as sapi_do_api turned off in configs.")
+            self.logger.warning("Not Uploading as sapi_do_api turned off in configs.")
         elif "sapi_endpoint" not in self.sapi_configs.keys():
             self.logger.error("Not Uploading as sapi_endpoint not set.")
         else:
             # It's Turned on
-            post_data = this_host.todict()
+            post_data = self.todict()
 
             for this_endpoint in self.sapi_configs["sapi_endpoints"]:
 
@@ -81,7 +99,7 @@ class Host:
                 headers = dict()
 
                 if "sapi_token" in this_endpoint.keys() and "sapi_username" in this_endpoint.keys():
-                    headers["Authorization"] = "{}:{}".format(str(this_endpoint["sapi_username"], this_endpoint["sapi_token"]))
+                    headers["Authorization"] = "{}:{}".format(str(this_endpoint["sapi_username"]), this_endpoint["sapi_token"])
                 else:
                     self.logger.warning("sapi_username and/or sapi_token not set in config. No Auth added (normally).")
 
@@ -91,31 +109,37 @@ class Host:
                 query_args.update(this_endpoint.get("custom_query_args", {}))
 
                 try:
-                    post_request = request.post(url, data=post_data, headers=headers, params=query_args)
+                    post_request = requests.post(url, data=post_data, headers=headers, params=query_args)
                 except Exception as upload_exception:
                     self.logger.error("Unable to Upload to endpoint : {} with error : {}".format(name, str(upload_exception)))
                 else:
                     response_code = post_request.status_code
                     if response_code == 200:
-                        if verbose == True:
-                            self.logger.info("Data Successfully Posted to : {}".format(name))
+                        self.logger.info("Data Successfully Posted to : {}".format(name))
                     else:
                         self.logger.warning("Data posted to : {} but returned status code {} ".format(name, response_code))
 
-        return
+        return response_code
 
 
 
     def get_configs(self, base_config_file, local_cols):
+
+        '''
+        Ensure I have my configs. Optionally read the config file
+        from disk if I've been given a string
+
+        Read Local Collections from Disk.
+        '''
 
         if isinstance(base_config_file, dict):
             # I've been given the configuration
             to_collect_items = base_config_file
         elif isinstance(base_config_file, str):
             # I've been given a filename parse it
-            with open(base_config_file, "r") as base_config_file:
+            with open(base_config_file, "r") as base_config_file_obj:
                 try:
-                    to_collect_items = yaml.safe_load(base_config_file)
+                    to_collect_items = yaml.safe_load(base_config_file_obj)
                 except yaml.YAMLError as yaml_error:
                     self.logger.error("Unable to read collection configuration file {} with error : \n{}".format(base_config_file, str(yaml_error)))
                     to_collect_items = dict()
@@ -124,7 +148,9 @@ class Host:
             # Do Local Cols
             collection_d_dir = local_cols[1]
             collections_files = list()
-            for (dirpath, dirnames, filenames) in os.walk(collections_d_dir):
+            for (dirpath, dirnames, filenames) in os.walk(collection_d_dir):
+                if len(dirnames) > 0:
+                    self.logger.debug("Ignoring Subdirectories : {}".format(dirnames))
                 for singlefile in filenames:
                     onefile = dirpath + "/" +  singlefile
                     #print(singlefile.find(".ini", -4))
@@ -147,6 +173,12 @@ class Host:
 
     def start_minion(self):
 
+        '''
+        Starting up a Minion. Generally I'm starting up a Self contained minion
+        But a fully configured one can be used here if the correct minion config
+        file is specified in the configuration.
+        '''
+
         # Any Earlier and I'll fubar the logger
         import salt.config
         import salt.client
@@ -159,6 +191,12 @@ class Host:
 
 
     def getone(self, cname, collection):
+
+        '''
+        Logic to Collect one thing from the host
+
+        Does the logic to use salt_caller to grab the data.
+        '''
 
         results_dictionary = dict()
         results_dictionary[cname] = dict()
@@ -193,6 +231,10 @@ class Host:
 
     def getall_collections(self):
 
+        '''
+        Cycles through all configured collections and runs a get_one for each one.
+        '''
+
         myresults = dict()
 
         for this_collection in self.base_config_file["collections"].keys():
@@ -202,7 +244,7 @@ class Host:
 
             myresults[this_collection] = this_result[this_collection]
 
-        myresults["host_host"] = self.gethostmeta()
+        myresults["host_host"] = self.mown.to_dict(noargs=True)
 
         return myresults
 
@@ -210,35 +252,26 @@ class Host:
 
         '''
         Takes the host metadata given and stores it puts defaults for nothing.
+
+        mown
         '''
 
-        hostmeta = dict()
+        mown_configs = {}
 
-        hostconfig = self.host_configs
-
-        hostmeta["hostname"] = socket.gethostname()
-
-        if hostconfig.get("pop", False) is not False:
-            hostmeta["pop"] = str(hostconfig["pop"])
+        if isinstance(self.host_configs["uri"], str):
+            # Send My URI In Naked
+            mown_configs = self.host_configs
         else:
-            hostmeta["pop"] = "none"
+            mown_configs = {**self.host_configs["uri"]}
 
-        if hostconfig.get("srvtype", False) is not False:
-            hostmeta["srvtype"] = str(hostconfig["srvtype"])
-        else:
-            hostmeta["srvtype"] = "none"
+            if "resource" not in self.host_configs.keys():
+                mown_configs["resource"] = socket.gethostname()
 
-        if hostconfig.get("status", False) is not False:
-            hostmeta["status"] = str(hostconfig["status"])
-        else:
-            hostmeta["status"] = "none"
+        my_mown = saltcell.mown.MoWN(**mown_configs)
 
-        if hostconfig.get("externalid", False) is not False:
-            hostmeta["externalid"] = str(hostconfig["externalid"])
+        self.logger.info("Guessed MOWN : {}".format(my_mown.gen_uri()))
 
-        self.logger.debug("Host Meta Information: {}".format(hostmeta))
-
-        return hostmeta
+        return my_mown
 
     def getbasedata(self):
 
@@ -248,7 +281,7 @@ class Host:
         And any other meta data that shouldn't be stored as a collection
         '''
 
-        basedata = self.gethostmeta()
+        basedata = self.mown.to_dict()
 
         basedata["collection_timestamp"] = int(time.time())
 
@@ -262,41 +295,34 @@ class Host:
         Future work, make configuralbe parsing
         '''
 
-        PRIVATE_NETWORKS = [ipaddress.ip_network("127.0.0.0/8"),
-                            ipaddress.ip_network("10.0.0.0/8"),
-                            ipaddress.ip_network("172.16.0.0/12"),
-                            ipaddress.ip_network("192.168.0.0/16"),
-                            ipaddress.ip_network("fd00::/8")]
-
         found_intel = list()
 
-        # Get Local Addresses
+        # Get Local Collected Addresses
         ipa_object = list()
-        self.logger.info(self.collection_info)
-        self.logger.info(self.collection_info.keys())
+
         ipa_object.extend(list(self.collection_info.get("ipv4_addr", {}).keys()))
         ipa_object.extend(list(self.collection_info.get("ipv6_addr", {}).keys()))
 
 
-        self.logger.info("Raw Intel Object for this Host : \n{}".format(ipa_object))
+        self.logger.debug("Raw Intel Object for this Host : \n{}".format(ipa_object))
 
         ipv4 = list()
         ipv6 = list()
 
         for this_unvalidated_ip in ipa_object:
 
-            self.logger.info("Doing the needful for IP : \n{}".format(this_unvalidated_ip))
+            self.logger.debug("Doing IP Intell Checks against unvalidated IP : \t{}".format(this_unvalidated_ip))
 
             isipv4 = False
             isipv6 = False
 
             try:
-                validated_ipv4 = socket.inet_pton(socket.AF_INET, this_unvalidated_ip)
+                socket.inet_pton(socket.AF_INET, this_unvalidated_ip)
                 isipv4 = True
             except OSError:
                 # IPV4 Validation Failed, Try IPV6
                 try:
-                    validated_ipv6 = socket.inet_pton(socket.AF_INET6, this_unvalidated_ip)
+                    socket.inet_pton(socket.AF_INET6, this_unvalidated_ip)
                     isipv6 = True
                 except OSError:
                     pass
@@ -306,18 +332,28 @@ class Host:
                     # On or the other was true let's see if it's a private address
                     this_ip = ipaddress.ip_address(this_unvalidated_ip)
 
-                    is_private = False
-                    for priv_net in PRIVATE_NETWORKS:
-                        if this_ip in priv_net:
-                            # This is a private ip
-                            self.logger.debug("{} is in Private network {}".format(this_ip, priv_net))
-                            is_private = True
-                            break
-                        else:
-                            # Check the other Private Networks
-                            continue
+                    this_ip_good = True
 
-                    if is_private == False:
+                    if this_ip.is_private:
+                        self.logger.debug("{} is a private address.".format(this_ip))
+                        this_ip_good = False
+                    elif this_ip.is_multicast:
+                        self.logger.debug("{} is a multicast address.".format(this_ip))
+                        this_ip_good = False
+                    elif this_ip.is_unspecified:
+                        self.logger.debug("{} is a unspecified (RFC 5735 or 2373) address.".format(this_ip))
+                        this_ip_good = False
+                    elif this_ip.is_loopback:
+                        self.logger.debug("{} is a loopback address.".format(this_ip))
+                        this_ip_good = False
+                    elif this_ip.is_link_local:
+                        self.logger.debug("{} is a link_local address.".format(this_ip))
+                        this_ip_good = False
+                    elif this_ip.is_global is False:
+                        self.logger.debug("{} is not a Global IP Address.".format(this_ip))
+                        this_ip_good = False
+
+                    if this_ip_good:
                         # It's not a private IP so add it to the intel report
                         if isipv4:
                             ipv4.append(this_unvalidated_ip)
@@ -331,11 +367,15 @@ class Host:
         this_intel["host4"] = unduped_ipv4
         this_intel["host6"] = unduped_ipv6
 
+        # Add all my IPs (even the non-public ones)
         for thing in ["host4", "host6"]:
-            for ip in this_intel[thing]:
+            for found_intel_ip in this_intel[thing]:
                 this_report = {"iptype" : thing,\
-                               "ip" : ip}
+                               "ip" : found_intel_ip}
 
                 found_intel.append(this_report)
+
+        self.logger.info("Found {} Validated IPs for IP Intel.".format(len(found_intel)))
+        self.logger.debug("IP Intel \n{}.".format(found_intel))
 
         return found_intel

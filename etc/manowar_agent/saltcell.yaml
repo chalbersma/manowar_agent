@@ -1,9 +1,19 @@
 ---
 hostinfo:
-  externalid: 10001
-  pop: location
-  srvtype: srvtype
-  status: status
+  # Alternatively
+  # uri: mown://thing:thing:thing:thing
+  # or
+  # uri: arn://thing:thing:thing
+  # This system will add the hostname as the resource
+  uri:
+    parition: partition
+    service: servertype
+    region: location
+    accountid: account
+    arguments:
+      externalid: 10001
+      status: status
+      taga: true
 sapi:
   #sapi_do_api: true
   sapi_do_api: false

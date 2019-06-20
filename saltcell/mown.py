@@ -116,11 +116,11 @@ class MoWN:
         self.path = path_flavor
 
         # Store any given arguments
-        self.arguments = urllib.parse.parse_qs(parsed_uri.query)
+        self.arguments = {**self.arguments, **dict(urllib.parse.parse_qsl(parsed_uri.query))}
 
         # Record Source of Scheme as an Arg
         if parsed_uri.scheme != "mown":
-            self.arguments["source_scheme"] = [parsed_uri.scheme]
+            self.arguments["source_scheme"] = str(parsed_uri.scheme)
 
         return parsed_uri
 
@@ -136,7 +136,7 @@ class MoWN:
         # Arguments Given
         query = ""
         if baseonly is False:
-            query = urllib.parse.urlencode(self.arguments, doseq=True)
+            query = urllib.parse.urlencode(self.arguments, doseq=False)
 
         # if kwargs("otherintegration", False) is True
         #   Other Baked in Integrations Here.

@@ -24,6 +24,7 @@ parts:
       - libzbar0
       - python3-dev
       - salt-minion
+      - dpkg
     python-packages:
       - certifi
       - pylint

@@ -23,8 +23,8 @@ parts:
       - libzbar-dev
       - libzbar0
       - python3-dev
+      - salt-minion
     python-packages:
-      - typed-ast
       - certifi
       - pylint
       - chardet
@@ -37,7 +37,6 @@ parts:
       - PyYAML
       - pyzmq
       - requests
-      - salt
       - tornado
       - urllib3
       - virtualenv

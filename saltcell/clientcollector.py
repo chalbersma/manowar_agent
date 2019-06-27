@@ -267,6 +267,8 @@ class Host:
             if "resource" not in self.host_configs.keys():
                 mown_configs["resource"] = socket.gethostname()
 
+        self.logger.debug("MOWN as Configured: {}".format(mown_configs))
+
         my_mown = saltcell.mown.MoWN(**mown_configs)
 
         self.logger.info("Guessed MOWN : {}".format(my_mown.gen_uri()))

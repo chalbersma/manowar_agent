@@ -6,7 +6,7 @@ hostinfo:
   # uri: arn://thing:thing:thing
   # This system will add the hostname as the resource
   uri:
-    parition: partition
+    partition: partition
     service: servertype
     region: location
     accountid: account

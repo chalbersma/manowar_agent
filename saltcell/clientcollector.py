@@ -271,7 +271,7 @@ class Host:
             mown_configs = {**self.host_configs["uri"]}
 
             if "resource" not in self.host_configs.keys():
-                mown_configs["resource"] = socket.gethostname()
+                mown_configs["resource"] = socket.getfqdn()
 
         self.logger.debug("MOWN as Configured: {}".format(mown_configs))
 

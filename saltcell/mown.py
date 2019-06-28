@@ -170,14 +170,15 @@ class MoWN:
 
         Parses thenetloc and loads the bits
         '''
+        split_netloc = re.split("[:/]", netloc)
 
-        if len(netloc.split(":")) < 5:
+        if split_netloc < 5:
             raise ValueError("Unknown or uncompatible Format on Given URI.")
 
         # First part is simple
-        self.partition, self.service, self.region, self.accountid = netloc.split(":")[0:4]
+        self.partition, self.service, self.region, self.accountid = split_netloc[0:4]
 
-        resource_string = ":{}".format(":".join(netloc.split(":")[4:]))
+        resource_string = ":{}".format(":".join(split_netloc[4:]))
 
         self.resource_meta = self.parse_resource_meta(resource_string)
 

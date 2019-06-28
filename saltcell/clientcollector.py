@@ -291,7 +291,7 @@ class Host:
         if self.host_configs.get("do_aws", True) is True:
             # If AWS Service Detection is Not Turned Off in Configuration
             if self.ec2_data["is_ec2"] is True:
-                mown_configs = self.ec2_data["uri"]
+                mown_configs = {"uri" : self.ec2_data["uri"]}
             else:
                 self.logger.debug("Not Detected as an AWS EC2 Instance.")
 

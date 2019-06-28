@@ -323,6 +323,8 @@ class Host:
             self.logger.debug("EC2 Instance Detection Failed Likely not AWS : {}".format(ec2_error))
         else:
 
+            self.logger.debug("AWS EC2 Instance Detected.")
+
             response_doc["is_ec2"] = True
 
             # Generate the ARN style URI

@@ -288,12 +288,12 @@ class Host:
             if "resource" not in self.host_configs.keys():
                 mown_configs["resource"] = socket.getfqdn()
 
-        if self.host_configs.get("do_aws", True) is False:
+        if self.host_configs.get("do_aws", True) is True:
             # If AWS Service Detection is Not Turned Off in Configuration
             if self.ec2_data["is_ec2"] is True:
                 mown_configs = ec2_data["uri"]
             else:
-                logger.debug("Not Detected as an AWS EC2 Instance.")
+                self.logger.debug("Not Detected as an AWS EC2 Instance.")
 
         self.logger.debug("MOWN as Configured: {}".format(mown_configs))
 
@@ -336,7 +336,7 @@ class Host:
                                                          "aws_instance_type" : ec2_metadata.ec2_metadata.instance_type,
                                                          "aws_private_hostname" : ec2_metadata.ec2_metadata.private_hostname,
                                                          "aws_public_hostname" : ec2_metadata.ec2_metadata.private_hostname,
-                                                         "aws_guessed_arn" : responde_doc["arn"]}}
+                                                         "aws_guessed_arn" : response_doc["arn"]}}
 
             # Generate the ARN style URI
             response_doc["uri"] = "arn://ec2:{}:{}:instance/{}?{}".format(ec2_metadata.ec2_metadata.region,
@@ -363,21 +363,21 @@ class Host:
                 try:
                     aws_collection["public_ivp4"] = ec2_metadata.ec2_metadata.public_ipv4
                 except Exception:
-                    logger.debug("AWS Detection no Public IPV4 Found.")
+                    self.logger.debug("AWS Detection no Public IPV4 Found.")
                 else:
                     aws_ipv4[aws_collection["public_ivp4"]] = "IPV4"
 
                 try:
                     aws_collection["public_ivp6"] = ec2_metadata.ec2_metadata.public_ipv6
                 except Exception:
-                    logger.debug("AWS Detection no Public IPV6 Found.")
+                    self.logger.debug("AWS Detection no Public IPV6 Found.")
                 else:
                     aws_ipv6[aws_collection["public_ivp6"]] = "IPV6"
 
                 try:
                     aws_collection["private_ivp4"] = ec2_metadata.ec2_metadata.public_ipv4
                 except Exception:
-                    logger.debug("AWS Detection no Public IPV6 Found.")
+                    self.logger.debug("AWS Detection no Public IPV6 Found.")
                 else:
                     aws_ipv6[aws_collection["private_ipv4"]] = "IPV4"
 

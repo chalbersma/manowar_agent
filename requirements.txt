@@ -18,3 +18,4 @@ virtualenv-clone
 virtualenv-tools
 bandit
 twine
+ec2-metadata

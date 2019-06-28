@@ -81,10 +81,6 @@ class MoWN:
         # Parsing the Given URI
         '''
 
-        if given_mown.split(":")[0] == "arn":
-            # Handling ARN Special Case
-            given_mown = "arn://" + ":".join(given_mown.split(":")[1:])
-
         self.logger.debug("Parsing in URI of : {}".format(given_mown))
 
         parsed_uri = urllib.parse.urlparse(given_mown)

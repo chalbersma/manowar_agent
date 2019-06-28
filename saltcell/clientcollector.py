@@ -237,7 +237,7 @@ class Host:
                     try:
                         parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
                     except Exception as JQ_Error:
-                        logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(JQ_Error))
+                        self.logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(JQ_Error))
                         results_dictionary[cname] = {"jq_error" : str(JQ_Error),
                                                      "jq_pre_found" : str(this_find)[:100]}
                     else:

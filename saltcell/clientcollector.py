@@ -205,24 +205,30 @@ class Host:
 
         if collection.get("salt", False) is True:
 
-            this_find = self.salt_caller.function(collection["saltfactor"], \
-                                            *collection["saltargs"], \
-                                            **collection["saltkwargs"])
-
-            self.logger.debug("Results for {} : \n{}".format(cname, json.dumps(this_find)))
-
-            if is_multi:
-                # Multi so do the JQ bits
-                parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
-
-                if parsed_result is None:
-                    # No Results
-                    results_dictionary[cname] = {"none":"none"}
-                else:
-                    results_dictionary[cname] = parsed_result
+            try:
+                this_find = self.salt_caller.function(collection["saltfactor"], \
+                                                    *collection["saltargs"], \
+                                                    **collection["saltkwargs"])
+            except Exception as salt_call_error:
+                self.logger.error("Unable to Run Salt Command for {}".format(cname))
+                results_dictionary[cname]["default"] = "error"
+                results_dictionary[cname]["salt_error"] = "{}".format(salt_call_error)
             else:
-                # Not Multi the whole thing goes
-                results_dictionary[cname]["default"] = str(this_find)
+
+                self.logger.debug("Results for {} : \n{}".format(cname, json.dumps(this_find, default=str)))
+
+                if is_multi:
+                    # Multi so do the JQ bits
+                    parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
+
+                    if parsed_result is None:
+                        # No Results
+                        results_dictionary[cname] = {"none":"none"}
+                    else:
+                        results_dictionary[cname] = parsed_result
+                else:
+                    # Not Multi the whole thing goes
+                    results_dictionary[cname]["default"] = str(this_find)
 
         else:
             results_dictionary = {"type" : {"subtype", "value"}}

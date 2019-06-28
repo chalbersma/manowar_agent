@@ -25,6 +25,7 @@ parts:
       - python3-dev
       - salt-minion
       - dpkg
+      - jq
     python-packages:
       - certifi
       - pylint

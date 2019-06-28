@@ -359,7 +359,7 @@ class Host:
                                   "instance_type" : ec2_metadata.ec2_metadata.instance_type,
                                   "private_hostname" : ec2_metadata.ec2_metadata.private_hostname,
                                   "public_hostname" : ec2_metadata.ec2_metadata.private_hostname,
-                                  "security_groups" : ec2_metadata.ec2_metadata.security_groups,
+                                  "security_groups" : ",".join(ec2_metadata.ec2_metadata.security_groups),
                                   "mac" : ec2_metadata.ec2_metadata.mac}
 
                 try:

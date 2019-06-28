@@ -91,6 +91,8 @@ if __name__ == "__main__":
                     # Minion File Is Not Specified Choose Default
                     minion_defaults = [os.path.dirname(os.path.realpath(CONFIG_FILE)) + "/minion",
                                        "./minion",
+                                       "/etc/manowar_agent/minion",
+                                       "/usr/local/etc/manowar_agent/minion",
                                        "/etc/salt/minion",
                                        "/usr/etc/salt/minion"]
 
@@ -105,6 +107,21 @@ if __name__ == "__main__":
                         sys.exit(1)
                 else:
                     logger.debug("Minion File Specified in Config, utilizing that file.")
+
+                # Let's Find my Collector Configuration File
+                if configs.get("stingcell", {}).get("collection_config_file", False) is False:
+                    collector_defaults = [os.path.dirname(os.path.realpath(CONFIG_FILE)) + "/collector.yaml",
+                                          "./collector.yaml",
+                                          "/etc/manowar_agent/collector.yaml",
+                                          "/usr/local/etc/manowar_agent/collector.yaml"]
+
+                    for possible_collector in collector_defaults:
+                        if os.path.isfile(possible_collector) and os.access(possible_collector, os.R_OK):
+                            logger.debug("Using Collector File : {}".format(possible_collector))
+                            configs["stingcell"]["collection_config_file"] = possible_collector
+                            break
+                else:
+                    logger.debug("Collector File Specified in Config, utilizing that file.")
 
     else:
         logger.error("No Config File Specifed or Found. Exiting.")

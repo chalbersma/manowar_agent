@@ -172,7 +172,7 @@ class MoWN:
         '''
         split_netloc = re.split("[:/]", netloc)
 
-        if split_netloc < 5:
+        if len(split_netloc) < 5:
             raise ValueError("Unknown or uncompatible Format on Given URI.")
 
         # First part is simple

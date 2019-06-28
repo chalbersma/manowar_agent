@@ -85,6 +85,27 @@ if __name__ == "__main__":
                 sys.exit(1)
             else:
                 logger.debug("Loaded Configurations from {}".format(CONFIG_FILE))
+            finally:
+                # Let's Find my Minion File
+                if configs.get("salt", {}).get("minion_file", False) is False:
+                    # Minion File Is Not Specified Choose Default
+                    minion_defaults = [os.path.dirname(os.path.realpath(CONFIG_FILE)) + "/minion",
+                                       "./minion",
+                                       "/etc/salt/minion",
+                                       "/usr/etc/salt/minion"]
+
+                    for possible_minion in minion_defaults:
+                        if os.path.isfile(possible_minion) and os.access(possible_minion, os.R_OK):
+                            logger.debug("Using Minion File : {}".format(possible_minion))
+                            configs["salt"] = {"minion_file" : possible_minion}
+                            break
+
+                    if configs.get("salt", {}).get("minion_file", False) is False:
+                        logger.error("minion_file not specified in config and default minion file not found. Erroring.")
+                        sys.exit(1)
+                else:
+                    logger.debug("Minion File Specified in Config, utilizing that file.")
+
     else:
         logger.error("No Config File Specifed or Found. Exiting.")
         sys.exit(1)

@@ -37,5 +37,6 @@ stingcell:
 ipintel:
   dointel: true
 version: 3
-salt:
-  minion_file: etc/manowar_agent/minion
+# Minion File Can Be Customized
+#salt:
+#  minion_file: /etc/path/to/salt/minion

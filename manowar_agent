@@ -8,12 +8,14 @@ A cli agent to help run the saltcell agent. Handles reding configs from file and
 
 # Salt Cell
 
+import os
+import logging
+
 import yaml
 import jq
 import requests
 import sys
 import argparse
-import logging
 import json
 
 #import salt.config
@@ -32,7 +34,7 @@ from saltcell.clientcollector import Host
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", help="Stingcell Config File (Default etc/manowar_agent/saltcell.yaml)", default="etc/manowar_agent/saltcell.yaml")
+    parser.add_argument("-c", "--config", help="Stingcell Config File (Default etc/manowar_agent/saltcell.yaml)", default=False)
     parser.add_argument("-p", "--print", help="Print stingcell json to stdout in addition to sending it along.", action='store_true')
     parser.add_argument("-n", "--noupload", help="Do not upload results to endoint.", action='store_true')
     parser.add_argument("-v", "--verbose", action='append_const', help="Turn on Verbosity", const=1, default=[])
@@ -59,12 +61,33 @@ if __name__ == "__main__":
 
     logger.info("Welcome to Saltcell")
 
-    with open(args.config, "r") as config_file:
-        try:
-            configs = yaml.safe_load(config_file)
-        except yaml.YAMLError as parse_error:
-            print("Unable to parse file {} with error : \n {}".format(args.config, parse_error))
-            sys.exit(1)
+    CONFIG_FILE=args.config
+
+    if args.config is False:
+        logger.debug("No Config File Given Look in Default Locations")
+        for default_file in ("./etc/manowar_agent/saltcell.yaml", \
+                             "./saltcell.yaml", \
+                             "/etc/manowar_agent/saltcell.yaml", \
+                             "/usr/local/etc/manowar_agent/saltcell.yaml"):
+
+            if os.path.isfile(default_file) and os.access(default_file, os.R_OK):
+                logger.debug("Using Default File : {}".format(default_file))
+                CONFIG_FILE = default_file
+                # Found a good file, us it.
+                break
+
+    if CONFIG_FILE is not False:
+        with open(CONFIG_FILE, "r") as config_file:
+            try:
+                configs = yaml.safe_load(config_file)
+            except yaml.YAMLError as parse_error:
+                logger.error("Unable to parse file {} with error : \n {}".format(CONFIG_FILE, parse_error))
+                sys.exit(1)
+            else:
+                logger.debug("Loaded Configurations from {}".format(CONFIG_FILE))
+    else:
+        logger.error("No Config File Specifed or Found. Exiting.")
+        sys.exit(1)
 
     if args.print:
         PRINT = True

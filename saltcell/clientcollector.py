@@ -363,25 +363,25 @@ class Host:
                                   "mac" : ec2_metadata.ec2_metadata.mac}
 
                 try:
-                    aws_collection["public_ivp4"] = ec2_metadata.ec2_metadata.public_ipv4
+                    aws_collection["public_ipv4"] = ec2_metadata.ec2_metadata.public_ipv4
                 except Exception:
                     self.logger.debug("AWS Detection no Public IPV4 Found.")
                 else:
-                    aws_ipv4[aws_collection["public_ivp4"]] = "IPV4"
+                    aws_ipv4[aws_collection["public_ipv4"]] = "IPV4"
 
                 try:
-                    aws_collection["public_ivp6"] = ec2_metadata.ec2_metadata.public_ipv6
+                    aws_collection["public_ipv6"] = ec2_metadata.ec2_metadata.public_ipv6
                 except Exception:
                     self.logger.debug("AWS Detection no Public IPV6 Found.")
                 else:
-                    aws_ipv6[aws_collection["public_ivp6"]] = "IPV6"
+                    aws_ipv6[aws_collection["public_ipv6"]] = "IPV6"
 
                 try:
-                    aws_collection["private_ivp4"] = ec2_metadata.ec2_metadata.public_ipv4
+                    aws_collection["private_ipv4"] = ec2_metadata.ec2_metadata.private_ipv4
                 except Exception:
-                    self.logger.debug("AWS Detection no Public IPV6 Found.")
+                    self.logger.debug("AWS Detection no Private IPV4 Found.")
                 else:
-                    aws_ipv6[aws_collection["private_ipv4"]] = "IPV4"
+                    aws_ipv4[aws_collection["private_ipv4"]] = "IPV4"
 
                 response_doc["aws_ipv4"] = aws_ipv4
                 response_doc["aws_ipv6"] = aws_ipv6

@@ -33,9 +33,11 @@ stingcell:
   default_collection_timeout: 60
   local_collections: false
   local_collections_location: /etc/manowar_agent/collections.d/
-  collection_config_file: etc/manowar_agent/collector.yaml
+  # Specify Desired Base Collector Configuration here.
+  #collection_config_file: /etc/manowar_agent/collector.yaml
 ipintel:
   dointel: true
 version: 3
-salt:
-  minion_file: etc/manowar_agent/minion
+# Minion File Can Be Customized
+#salt:
+#  minion_file: /etc/path/to/salt/minion

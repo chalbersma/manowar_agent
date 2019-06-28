@@ -11,10 +11,13 @@ import ipaddress
 import logging
 import os
 import sys
+import urllib
 
 import yaml
 import requests
 import jq
+# For AWS Service Detection
+import ec2_metadata
 
 import saltcell.mown
 
@@ -40,9 +43,21 @@ class Host:
 
         self.host_configs = host_configs
 
+        self.ec2_data = self.get_aws_ec2_data(get_collections=True)
+
         self.mown = self.gethostmeta()
 
         self.collection_info = self.getall_collections()
+
+        # Service Specific Extends Here
+        if self.ec2_data["is_ec2"] is True:
+            self.collection_info["aws_info"] = self.ec2_data["aws_info"]
+
+            # Add IP Data
+            self.collection_info["ipv4_addr"] = {**self.collection_info["ipv4_addr"], **self.ec2_data["aws_ipv4"]}
+            self.collection_info["ipv6_addr"] = {**self.collection_info["ipv6_addr"], **self.ec2_data["aws_ipv6"]}
+
+        # elif self.next_platform is true for the future
 
         self.basedata = self.getbasedata()
 
@@ -205,24 +220,30 @@ class Host:
 
         if collection.get("salt", False) is True:
 
-            this_find = self.salt_caller.function(collection["saltfactor"], \
-                                            *collection["saltargs"], \
-                                            **collection["saltkwargs"])
-
-            self.logger.debug("Results for {} : \n{}".format(cname, json.dumps(this_find)))
-
-            if is_multi:
-                # Multi so do the JQ bits
-                parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
-
-                if parsed_result is None:
-                    # No Results
-                    results_dictionary[cname] = {"none":"none"}
-                else:
-                    results_dictionary[cname] = parsed_result
+            try:
+                this_find = self.salt_caller.function(collection["saltfactor"], \
+                                                      *collection["saltargs"], \
+                                                      **collection["saltkwargs"])
+            except Exception as salt_call_error:
+                self.logger.error("Unable to Run Salt Command for {}".format(cname))
+                results_dictionary[cname]["default"] = "error"
+                results_dictionary[cname]["salt_error"] = "{}".format(salt_call_error)
             else:
-                # Not Multi the whole thing goes
-                results_dictionary[cname]["default"] = str(this_find)
+
+                self.logger.debug("Results for {} : \n{}".format(cname, json.dumps(this_find, default=str)))
+
+                if is_multi:
+                    # Multi so do the JQ bits
+                    parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
+
+                    if parsed_result is None:
+                        # No Results
+                        results_dictionary[cname] = {"none":"none"}
+                    else:
+                        results_dictionary[cname] = parsed_result
+                else:
+                    # Not Multi the whole thing goes
+                    results_dictionary[cname]["default"] = str(this_find)
 
         else:
             results_dictionary = {"type" : {"subtype", "value"}}
@@ -265,7 +286,14 @@ class Host:
             mown_configs = {**self.host_configs["uri"]}
 
             if "resource" not in self.host_configs.keys():
-                mown_configs["resource"] = socket.gethostname()
+                mown_configs["resource"] = socket.getfqdn()
+
+        if self.host_configs.get("do_aws", True) is True:
+            # If AWS Service Detection is Not Turned Off in Configuration
+            if self.ec2_data["is_ec2"] is True:
+                mown_configs = {"uri" : self.ec2_data["uri"]}
+            else:
+                self.logger.debug("Not Detected as an AWS EC2 Instance.")
 
         self.logger.debug("MOWN as Configured: {}".format(mown_configs))
 
@@ -274,6 +302,92 @@ class Host:
         self.logger.info("Guessed MOWN : {}".format(my_mown.gen_uri()))
 
         return my_mown
+
+    def get_aws_ec2_data(self, get_collections=False):
+
+        '''
+        Utilize ec_metadata endpoint to get ec2 Data
+        '''
+
+        response_doc = {"is_ec2" : False}
+
+
+        if isinstance(self.host_configs["uri"], dict):
+            given_args = self.host_configs["uri"].get("arguments", {})
+        else:
+            given_args = {}
+
+        try:
+            ec2_metadata.ec2_metadata.instance_id
+        except Exception as ec2_error:
+            self.logger.debug("EC2 Instance Detection Failed Likely not AWS : {}".format(ec2_error))
+        else:
+
+            self.logger.debug("AWS EC2 Instance Detected.")
+
+            response_doc["is_ec2"] = True
+
+            # Generate the ARN style URI
+            response_doc["arn"] = "arn:ec2:{}:{}:instance/{}".format(ec2_metadata.ec2_metadata.region,
+                                                                     ec2_metadata.ec2_metadata.account_id,
+                                                                     ec2_metadata.ec2_metadata.instance_id)
+
+            # Add Various Arguments
+            response_doc["arn_args"] = {**given_args, **{"aws_ami_id" : ec2_metadata.ec2_metadata.ami_id,
+                                                         "aws_avail_zone" : ec2_metadata.ec2_metadata.availability_zone,
+                                                         "aws_instance_type" : ec2_metadata.ec2_metadata.instance_type,
+                                                         "aws_private_hostname" : ec2_metadata.ec2_metadata.private_hostname,
+                                                         "aws_public_hostname" : ec2_metadata.ec2_metadata.private_hostname,
+                                                         "aws_guessed_arn" : response_doc["arn"]}}
+
+            # Generate the ARN style URI
+            response_doc["uri"] = "arn://ec2:{}:{}:instance/{}?{}".format(ec2_metadata.ec2_metadata.region,
+                                                                          ec2_metadata.ec2_metadata.account_id,
+                                                                          ec2_metadata.ec2_metadata.instance_id,
+                                                                          urllib.parse.urlencode(response_doc["arn_args"]))
+
+            self.logger.debug("Guessed AWS ARN based URI : {}".format(response_doc["arn"]))
+
+            if get_collections is True:
+                self.logger.debug("Grabbing AWS Collections.")
+
+                aws_ipv4 = dict()
+                aws_ipv6 = dict()
+                aws_collection = {"ami_id" : ec2_metadata.ec2_metadata.ami_id,
+                                  "avail_zone" : ec2_metadata.ec2_metadata.availability_zone,
+                                  "iam_info" : str(ec2_metadata.ec2_metadata.iam_info),
+                                  "instance_type" : ec2_metadata.ec2_metadata.instance_type,
+                                  "private_hostname" : ec2_metadata.ec2_metadata.private_hostname,
+                                  "public_hostname" : ec2_metadata.ec2_metadata.private_hostname,
+                                  "security_groups" : ",".join(ec2_metadata.ec2_metadata.security_groups),
+                                  "mac" : ec2_metadata.ec2_metadata.mac}
+
+                try:
+                    aws_collection["public_ipv4"] = ec2_metadata.ec2_metadata.public_ipv4
+                except Exception:
+                    self.logger.debug("AWS Detection no Public IPV4 Found.")
+                else:
+                    aws_ipv4[aws_collection["public_ipv4"]] = "IPV4"
+
+                try:
+                    aws_collection["public_ipv6"] = ec2_metadata.ec2_metadata.public_ipv6
+                except Exception:
+                    self.logger.debug("AWS Detection no Public IPV6 Found.")
+                else:
+                    aws_ipv6[aws_collection["public_ipv6"]] = "IPV6"
+
+                try:
+                    aws_collection["private_ipv4"] = ec2_metadata.ec2_metadata.private_ipv4
+                except Exception:
+                    self.logger.debug("AWS Detection no Private IPV4 Found.")
+                else:
+                    aws_ipv4[aws_collection["private_ipv4"]] = "IPV4"
+
+                response_doc["aws_ipv4"] = aws_ipv4
+                response_doc["aws_ipv6"] = aws_ipv6
+                response_doc["aws_info"] = aws_collection
+
+        return response_doc
 
     def getbasedata(self):
 

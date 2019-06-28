@@ -103,7 +103,8 @@ setuptools.setup(
         "jq",
         "PyYAML",
         "requests",
-        "salt"
+        "salt",
+        "ec2_metadata"
     ],
     scripts=["manowar_agent"],
     data_files=[("etc/manowar_agent", ["etc/manowar_agent/collector.yaml", "etc/manowar_agent/minion", "etc/manowar_agent/saltcell.yaml"])]

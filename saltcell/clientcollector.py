@@ -234,13 +234,18 @@ class Host:
 
                 if is_multi:
                     # Multi so do the JQ bits
-                    parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
-
-                    if parsed_result is None:
-                        # No Results
-                        results_dictionary[cname] = {"none":"none"}
+                    try:
+                        parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
+                    except Exception as JQ_Error:
+                        logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(JQ_Error))
+                        results_dictionary[cname] = {"jq_error" : str(JQ_Error),
+                                                     "jq_pre_found" : str(this_find)[:100]}
                     else:
-                        results_dictionary[cname] = parsed_result
+                        if parsed_result is None:
+                            # No Results
+                            results_dictionary[cname] = {"none":"none"}
+                        else:
+                            results_dictionary[cname] = parsed_result
                 else:
                     # Not Multi the whole thing goes
                     results_dictionary[cname]["default"] = str(this_find)

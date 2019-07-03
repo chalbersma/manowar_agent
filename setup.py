@@ -85,6 +85,7 @@ setuptools.setup(
     author="Chris Halbersma",
     author_email="chris+manowar@halbersma.us",
     description="Package to Add as a Collector",
+    license="BSD-2-Clause",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/chalbersma/manowar",

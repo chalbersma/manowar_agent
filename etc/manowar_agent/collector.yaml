@@ -39,13 +39,13 @@ collections:
     multi: true
     saltfactor: "apache.vhosts"
     jq_parse: '[to_entries | .[] | .key as $top | .value | to_entries | .[] | {"\($top)-\(.key)-vhost_name": .value.vhost, "\($top)-\(.key)-vhost_conf" : .value.conf }] | add'
-  cpan_installed:
-    salt: true
-    multi: true
-    saltfactor: "cpan.list"
-    saltargs: []
-    saltkwargs: {}
-    jq_parse: '.'
+#  cpan_installed:
+#    salt: true
+#    multi: true
+#    saltfactor: "cpan.list"
+#    saltargs: []
+#    saltkwargs: {}
+#    jq_parse: '.'
   release:
     salt: true
     multi: false

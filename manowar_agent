@@ -12,7 +12,6 @@ import os
 import logging
 
 import yaml
-import jq
 import requests
 import sys
 import argparse

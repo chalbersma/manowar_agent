@@ -15,7 +15,7 @@ import urllib
 
 import yaml
 import requests
-import jq
+import pyjq
 # For AWS Service Detection
 import ec2_metadata
 
@@ -217,13 +217,14 @@ class Host:
         results_dictionary[cname] = dict()
 
         is_multi = collection.get("multi", False)
+        len_zero_default = collection.get("len_zero_default", None)
 
         if collection.get("salt", False) is True:
 
             try:
                 this_find = self.salt_caller.function(collection["saltfactor"], \
-                                                      *collection["saltargs"], \
-                                                      **collection["saltkwargs"])
+                                                      *collection.get("saltargs", list()), \
+                                                      **collection.get("saltkwargs", dict()))
             except Exception as salt_call_error:
                 self.logger.error("Unable to Run Salt Command for {}".format(cname))
                 results_dictionary[cname]["default"] = "error"
@@ -235,7 +236,8 @@ class Host:
                 if is_multi:
                     # Multi so do the JQ bits
                     try:
-                        parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
+                        #parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
+                        parsed_result = pyjq.first(collection["jq_parse"], this_find)
                     except Exception as JQ_Error:
                         self.logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(JQ_Error))
                         results_dictionary[cname] = {"jq_error" : str(JQ_Error),
@@ -244,11 +246,22 @@ class Host:
                         if parsed_result is None:
                             # No Results
                             results_dictionary[cname] = {"none":"none"}
+
+                            if len_zero_default is not None and isinstance(len_zero_default, dict):
+                                results_dictionary[cname] = len_zero_default
+                            elif len_zero_default is not None and isinstance(len_zero_default, str):
+                                results_dictionary[cname] = {"default" : len_zero_default}
+
                         else:
                             results_dictionary[cname] = parsed_result
                 else:
                     # Not Multi the whole thing goes
-                    results_dictionary[cname]["default"] = str(this_find)
+                    if len(str(this_find)) == 0 and len_zero_default is not None and isinstance(len_zero_default, str):
+                        # I have no result and I have a zero lenght default
+                        results_dictionary[cname]["default"] = len_zero_default
+                    else:
+                        # I have a result or no result but no default
+                        results_dictionary[cname]["default"] = str(this_find)
 
         else:
             results_dictionary = {"type" : {"subtype", "value"}}

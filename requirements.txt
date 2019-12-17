@@ -3,7 +3,7 @@ pylint
 chardet
 idna
 Jinja2
-jq
+pyjq
 MarkupSafe
 msgpack
 pycrypto

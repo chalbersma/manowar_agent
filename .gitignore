@@ -110,3 +110,4 @@ venv.bak/
 /include
 /share/
 /manowar_agent.kdev4
+etc/salt/*

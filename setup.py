@@ -85,6 +85,7 @@ setuptools.setup(
     author="Chris Halbersma",
     author_email="chris+manowar@halbersma.us",
     description="Package to Add as a Collector",
+    license="BSD-2-Clause",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/chalbersma/manowar",
@@ -94,13 +95,14 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Topic :: Security"
     ],
     install_requires=[
         "Jinja2",
-        "jq",
+        "pyjq",
         "PyYAML",
         "requests",
         "salt",

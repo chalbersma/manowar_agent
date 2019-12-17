@@ -8,6 +8,42 @@ collections:
     saltargs: []
     saltkwargs: {}
     jq_parse: "."
+  acl_version:
+    salt: true
+    multi: false
+    saltfactor: "acl.version"
+    saltargs: []
+    saltkwargs: {}
+    jq_parse: "."
+  apache_fullversion:
+    salt: true
+    multi: true
+    saltfactor: "apache.fullversion"
+    saltargs: []
+    saltkwargs: {}
+    jq_parse: 'del(.compiled_with) | [ to_entries | .[] | { (.key) : (.value| tostring ) }] | add'
+  apache_compiled_flags:
+    salt: true
+    multi: true
+    saltfactor: "apache.fullversion"
+    saltargs: []
+    saltkwargs: {}
+    jq_parse: '.compiled_with | [.[] | { (.) : "SET" }] | add'
+  apache_modules:
+    salt: true
+    multi: true
+    saltfactor: "apache.modules"
+    jq_parse: '[ to_entries[] | .value[] as $v | {($v | tostring) : (.key)} ] | add '
+  apache_vhosts:
+    salt: true
+    multi: true
+    saltfactor: "apache.vhosts"
+    jq_parse: '[to_entries | .[] | .key as $top | .value | to_entries | .[] | {"\($top)-\(.key)-vhost_name": .value.vhost, "\($top)-\(.key)-vhost_conf" : .value.conf }] | add'
+  cpan_installed:
+    salt: true
+    multi: true
+    saltfactor: cpan.list
+    jq_parse: '.'
   release:
     salt: true
     multi: false
@@ -85,6 +121,7 @@ collections:
     saltargs: ["os_family"]
     saltkwargs: {}
     jq_parse: "."
+    len_zero_default: "unmapped"
   os:
     salt: true
     multi: false
@@ -99,6 +136,55 @@ collections:
     saltargs: ["osversion"]
     saltkwargs: {}
     jq_parse: "."
+    len_zero_defualt: "not found"
+  os_fullname:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["osfullname"]
+    saltkwargs: {}
+    jq_parse: "."
+    len_zero_defualt: "not found"
+  os_release:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["osrelease"]
+    saltkwargs: {}
+    jq_parse: "."
+    len_zero_default: "not found"
+  os_servicepack:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["osservicepack"]
+    saltkwargs: {}
+    jq_parse: "."
+    len_zero_default: "not found"
+  os_manufacturer:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["osmannufacturer"]
+    saltkwargs: {}
+    jq_parse: "."
+    len_zero_default: "not found"
+  productname:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["productname"]
+    saltkwargs: {}
+    jq_parse: "."
+    len_zero_default: "not found"
+  timezone:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["timezone"]
+    saltkwargs: {}
+    jq_parse: "."
+    len_zero_default: "not found"
   kernelrelease:
     salt: true
     multi: false
@@ -111,6 +197,55 @@ collections:
     multi: false
     saltfactor: "grains.get"
     saltargs: ["cpuarch"]
+    saltkwargs: {}
+    jq_parse: "."
+  cpucount:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["num_cpus"]
+    saltkwargs: {}
+    jq_parse: "."
+  cpumodel:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["cpu_model"]
+    saltkwargs: {}
+    jq_parse: "."
+  cpuflags:
+    salt: true
+    multi: true
+    saltfactor: "grains.get"
+    saltargs: ["cpu_flags"]
+    saltkwargs: {}
+    jq_parse: '[ .[] | { (.) : "SET" } ] | add '
+  gpucount:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["num_gpus"]
+    saltkwargs: {}
+    jq_parse: "."
+  gpu_enum:
+    salt: true
+    multi: true
+    saltfactor: "grains.get"
+    saltargs: ["gpus"]
+    saltkwargs: {}
+    jq_parse: "[ .[] | { (.vendor) : (.model) } ] | add"
+  mem_total:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["mem_total"]
+    saltkwargs: {}
+    jq_parse: "."
+  swap_total:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["swap_total"]
     saltkwargs: {}
     jq_parse: "."
   locale:
@@ -127,6 +262,14 @@ collections:
     saltargs: ["virtual"]
     saltkwargs: {}
     jq_parse: "."
+  virtual_subtype:
+    salt: true
+    multi: false
+    saltfactor: "grains.get"
+    saltargs: ["virtual_subtype"]
+    saltkwargs: {}
+    jq_parse: "."
+    len_zero_default: "physical"
   ipv4_addr:
     salt: true
     multi: true

@@ -4,6 +4,8 @@
 An attempt to make a ghetto packaging script.
 '''
 
+# pylint: skip-file
+
 import setuptools
 import sys
 import os

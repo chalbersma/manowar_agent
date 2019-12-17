@@ -42,7 +42,9 @@ collections:
   cpan_installed:
     salt: true
     multi: true
-    saltfactor: cpan.list
+    saltfactor: "cpan.list"
+    saltargs: []
+    saltkwargs: {}
     jq_parse: '.'
   release:
     salt: true

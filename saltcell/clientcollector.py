@@ -100,8 +100,6 @@ class Host:
             self.logger.warning("Not uploading as noupload option specified at runtime, ignoring confiuration.")
         elif isinstance(self.sapi_configs, dict) and self.sapi_configs.get("sapi_do_api", False) is False:
             self.logger.warning("Not Uploading as sapi_do_api turned off in configs.")
-        elif "sapi_endpoint" not in self.sapi_configs.keys():
-            self.logger.error("Not Uploading as sapi_endpoint not set.")
         else:
             # It's Turned on
             post_data = self.todict()
@@ -116,7 +114,7 @@ class Host:
                 if "sapi_token" in this_endpoint.keys() and "sapi_username" in this_endpoint.keys():
                     headers["Authorization"] = "{}:{}".format(str(this_endpoint["sapi_username"]), this_endpoint["sapi_token"])
                 else:
-                    self.logger.warning("sapi_username and/or sapi_token not set in config. No Auth added (normally).")
+                    self.logger.warning("sapi_username and/or sapi_token not set in config. No Default Auth added (normally).")
 
                 headers.update(this_endpoint.get("custom_headers", {}))
 

@@ -100,8 +100,6 @@ class Host:
             self.logger.warning("Not uploading as noupload option specified at runtime, ignoring confiuration.")
         elif isinstance(self.sapi_configs, dict) and self.sapi_configs.get("sapi_do_api", False) is False:
             self.logger.warning("Not Uploading as sapi_do_api turned off in configs.")
-        elif "sapi_endpoint" not in self.sapi_configs.keys():
-            self.logger.error("Not Uploading as sapi_endpoint not set.")
         else:
             # It's Turned on
             post_data = self.todict()
@@ -111,12 +109,14 @@ class Host:
                 url = this_endpoint.get("url", False)
                 name = this_endpoint.get("name", url)
 
+                self.logger.debug("Uploading Data to : {}".format(name))
+
                 headers = dict()
 
                 if "sapi_token" in this_endpoint.keys() and "sapi_username" in this_endpoint.keys():
                     headers["Authorization"] = "{}:{}".format(str(this_endpoint["sapi_username"]), this_endpoint["sapi_token"])
                 else:
-                    self.logger.warning("sapi_username and/or sapi_token not set in config. No Auth added (normally).")
+                    self.logger.warning("sapi_username and/or sapi_token not set in config. No Default Auth added (normally).")
 
                 headers.update(this_endpoint.get("custom_headers", {}))
 
@@ -124,7 +124,7 @@ class Host:
                 query_args.update(this_endpoint.get("custom_query_args", {}))
 
                 try:
-                    post_request = requests.post(url, data=post_data, headers=headers, params=query_args)
+                    post_request = requests.post(url, json=post_data, headers=headers, params=query_args)
                 except Exception as upload_exception:
                     self.logger.error("Unable to Upload to endpoint : {} with error : {}".format(name, str(upload_exception)))
                 else:
@@ -238,9 +238,9 @@ class Host:
                     try:
                         #parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
                         parsed_result = pyjq.first(collection["jq_parse"], this_find)
-                    except Exception as JQ_Error:
-                        self.logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(JQ_Error))
-                        results_dictionary[cname] = {"jq_error" : str(JQ_Error),
+                    except Exception as Jq_Error:
+                        self.logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(Jq_Error))
+                        results_dictionary[cname] = {"jq_error" : str(Jq_Error),
                                                      "jq_pre_found" : str(this_find)[:100]}
                     else:
                         if parsed_result is None:

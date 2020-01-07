@@ -271,7 +271,7 @@ collections:
     saltargs: ["virtual_subtype"]
     saltkwargs: {}
     jq_parse: "."
-    len_zero_default: "physical"
+    len_zero_default: "unspecified"
   ipv4_addr:
     salt: true
     multi: true

@@ -54,7 +54,7 @@ class MoWN:
                                                                                                    self.accountid,
                                                                                                    self.gen_resource()))
 
-    def to_dict(self, noargs=False):
+    def to_dict(self, noargs=False, v2_compat=True):
 
         '''
         Returns a Dictionary Representation of the data in this thing
@@ -69,6 +69,13 @@ class MoWN:
         return_dict["accountid"] = self.accountid
         return_dict["mown_base"] = self.gen_uri(baseonly=True)
         return_dict["mown_full"] = self.gen_uri()
+
+        if v2_compat is True:
+            return_dict["uber_id"] = self.arguments.get("uber_id", None)
+            return_dict["collection_hostname"] = self.resource_meta["resource"]
+            return_dict["pop"] = self.region
+            return_dict["srvtype"] = self.service
+            return_dict["status"] = self.arguments.get("status", "unspecified")
 
         if noargs is False:
             return_dict["arguments"] = self.arguments

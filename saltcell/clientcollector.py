@@ -109,6 +109,8 @@ class Host:
                 url = this_endpoint.get("url", False)
                 name = this_endpoint.get("name", url)
 
+                self.logger.debug("Uploading Data to : {}".format(name))
+
                 headers = dict()
 
                 if "sapi_token" in this_endpoint.keys() and "sapi_username" in this_endpoint.keys():
@@ -122,7 +124,7 @@ class Host:
                 query_args.update(this_endpoint.get("custom_query_args", {}))
 
                 try:
-                    post_request = requests.post(url, data=post_data, headers=headers, params=query_args)
+                    post_request = requests.post(url, json=post_data, headers=headers, params=query_args)
                 except Exception as upload_exception:
                     self.logger.error("Unable to Upload to endpoint : {} with error : {}".format(name, str(upload_exception)))
                 else:
@@ -236,9 +238,9 @@ class Host:
                     try:
                         #parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
                         parsed_result = pyjq.first(collection["jq_parse"], this_find)
-                    except Exception as JQ_Error:
-                        self.logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(JQ_Error))
-                        results_dictionary[cname] = {"jq_error" : str(JQ_Error),
+                    except Exception as Jq_Error:
+                        self.logger.debug("When parsing {} Found results but JQ Parsing Failed.".format(Jq_Error))
+                        results_dictionary[cname] = {"jq_error" : str(Jq_Error),
                                                      "jq_pre_found" : str(this_find)[:100]}
                     else:
                         if parsed_result is None:

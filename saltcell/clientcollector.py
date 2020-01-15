@@ -12,10 +12,12 @@ import logging
 import os
 import sys
 import urllib
+import re
 
 import yaml
 import requests
 import pyjq
+import jinja2
 # For AWS Service Detection
 import ec2_metadata
 
@@ -29,27 +31,39 @@ class Host:
 
     def __init__(self, minion_file="minion", base_config_file=False, local_cols=[False, None],
                  host_configs=False, ipintel_configs=False,
-                 noupload=False, sapi_configs=False):
+                 noupload=False, sapi_configs=False, **kwargs):
 
         self.logger = logging.getLogger("saltcell.clientcollector.Host")
+        
+        self.kwargs = kwargs
 
         self.noupload_runtime = noupload
+        
+        self.host_configs = host_configs
 
+        # Setup Things
         self.minion_file = minion_file
 
         self.salt_caller = self.start_minion()
 
         self.base_config_file = self.get_configs(base_config_file, local_cols)
-
-        self.host_configs = host_configs
-
+        
+        # Platform Detection (Possible External Future)
+        ## EC2 Detection
         self.ec2_data = self.get_aws_ec2_data(get_collections=True)
 
+        # elif self.next_platform is true for the future
+        
+        # Get Taxonomy Data
         self.mown = self.gethostmeta()
+        self.basedata = self.getbasedata()
+        
+        self.default_grain = self.do_call("grains.items")
 
+        # Get Collection Data
         self.collection_info = self.getall_collections()
-
-        # Service Specific Extends Here
+        
+        # Special Case EC2 Data
         if self.ec2_data["is_ec2"] is True:
             self.collection_info["aws_info"] = self.ec2_data["aws_info"]
 
@@ -57,12 +71,10 @@ class Host:
             self.collection_info["ipv4_addr"] = {**self.collection_info["ipv4_addr"], **self.ec2_data["aws_ipv4"]}
             self.collection_info["ipv6_addr"] = {**self.collection_info["ipv6_addr"], **self.ec2_data["aws_ipv6"]}
 
-        # elif self.next_platform is true for the future
-
-        self.basedata = self.getbasedata()
-
+        # Process IP Intel
         self.ipintel_configs = ipintel_configs
 
+        # Uplad if I may
         self.sapi_configs = sapi_configs
 
         if self.ipintel_configs.get("dointel", False) is True:
@@ -87,6 +99,31 @@ class Host:
                        **self.basedata}
 
         return return_dict
+
+    def hydrate_obj(self, uh_obj, pump):
+        
+        '''
+        Take the Thing given with the dictionary pump and
+        turn it into a hydrated object
+        '''
+        
+        do_json = False
+        template_string = str(uh_obj)
+        
+        if isinstance(uh_obj, (dict, list)) is True:
+            template_string = json.dumps(uh_obj)
+            do_json = True
+        
+        template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(template_string)
+        
+        rendered_string = template.render(**pump)
+        
+        if do_json is True:
+            return_obj = json.loads(rendered_string)
+        else:
+            return_obj = rendered_string
+        
+        return rendered_string
 
     def eval_upload(self):
 
@@ -197,15 +234,65 @@ class Host:
         # Any Earlier and I'll fubar the logger
         import salt.config
         import salt.client
+        
+        if self.kwargs.get("remote", False) is False:
 
-        minion_opts = salt.config.minion_config(self.minion_file)
+            minion_opts = salt.config.minion_config(self.minion_file)
 
-        salt_caller = salt.client.Caller(c_path=".", mopts=minion_opts)
-
+            salt_caller = salt.client.Caller(c_path=".", mopts=minion_opts)
+        
+        else:
+            
+            # Make Salt_Caller a SSH Caller as this is a remote host collection
+            salt_caller = salt.client.ssh.client.SSHClient(c_path=self.kwargs.get("master_dir", "/etc/manowar/salt/master"),
+                                                           mopts=self.kwargs.get("salt_ssh_mopts", None))
+        
         return salt_caller
 
+    def do_call(self, saltfactor, saltargs=[], saltkwargs={}, jinja=False, dyn_jinja_dict=None):
+        
+        '''
+        Does the Actual Call to Salt. Handles a Different Thing if this is a remote host
+        we're trying to grab data for.
+        '''
+        
+        this_find = None
+        
+        if jinja is True:
+            saltfactor = self.hydrate_obj(saltfactor, dyn_jinja_dict)
+            saltargs = self.hydrate_obj(list(saltargs), dyn_jinja_dict)
+            saltkwargs = self.hydrate_obj(saltkwargs, dyn_jinja_dict)
+        
+        if self.kwargs.get("remote", False) is False:
+            # Local Try
+            try:
+                this_find = self.salt_caller.function(saltfactor,
+                                                      *saltargs,
+                                                      **saltkwargs)
+            except Exception as salt_call_error:
+                self.logger.error("Unable to Run Salt Command for {}".format(saltfactor))
+                self.logger.debug("Failed Commmand Full : {} {} {}".format(saltfactor, saltargs, saltkwargs))
+                self.logger.debug("Error : {}".format(salt_call_error))
+            else:
+                self.logger.debug("Return for {} : {}".format(saltfactor, this_find))
+                
+        else:
+            try:
+                this_find = self.salt_caller.cmd(self.kwargs.get("remote_host_id", None),
+                                                 saltfactor,
+                                                 arg=saltargs,
+                                                 kwarg=saltkwargs,
+                                                 timeout=self.kwargs.get("remote_timeout", 500))
+            except Exception as salt_ssh_error:
+                self.logger.error("Unable to Run Salt SSH command for {}".format(self.kwargs.get("remote_host_id", None)))
+                self.logger.debug("Error : {}".format(salt_ssh_error))
+            else:
+                ## TODO do the needful to pull out the equivalent this_find
+                pass
+        
+        return this_find
 
-    def getone(self, cname, collection):
+    def getone(self, cname, collection, **kwargs):
 
         '''
         Logic to Collect one thing from the host
@@ -220,20 +307,40 @@ class Host:
         len_zero_default = collection.get("len_zero_default", None)
 
         if collection.get("salt", False) is True:
+            
+            try_fanout = True
 
-            try:
-                this_find = self.salt_caller.function(collection["saltfactor"], \
-                                                      *collection.get("saltargs", list()), \
-                                                      **collection.get("saltkwargs", dict()))
-            except Exception as salt_call_error:
+            this_find = self.do_call(collection["saltfactor"],
+                                     saltargs=collection.get("saltargs", list()),
+                                     saltkwargs=collection.get("saltkwargs", dict()),
+                                     jinja=kwargs.get("jinja", False),
+                                     dyn_jinja_dict=kwargs.get("dyn_jinja_dict", None)
+                                    )
+            
+            if this_find is None:
                 self.logger.error("Unable to Run Salt Command for {}".format(cname))
-                results_dictionary[cname]["default"] = "error"
-                results_dictionary[cname]["salt_error"] = "{}".format(salt_call_error)
+                results_dictionary[cname]["default"] = collection.get("error_hint", "error")
+                try_fanout = False
             else:
 
                 self.logger.debug("Results for {} : \n{}".format(cname, json.dumps(this_find, default=str)))
-
-                if is_multi:
+                
+                
+                # Example Collection with snap packages for things in OS:Ubuntu
+                if is_multi == "text":
+                    # This is a Text Collection
+                    
+                    for this_line in this_find.splitlines():
+                        try:
+                            this_subtype = this_line.split()[0]
+                            this_value = this_line.split()[1:]
+                        except Exception as invalid_text_line:
+                            self.logger.info("Invalid Text line {}".format(this_line))
+                            self.logger.debug("Error : {}".format(invalid_text_line))
+                        else:
+                            results_dictionary[cname][this_subtype] = this_value
+                        
+                elif is_multi is True:
                     # Multi so do the JQ bits
                     try:
                         #parsed_result = jq.jq(collection["jq_parse"]).transform(this_find)
@@ -262,6 +369,14 @@ class Host:
                     else:
                         # I have a result or no result but no default
                         results_dictionary[cname]["default"] = str(this_find)
+                
+                if try_fanout is True:
+                    pass
+                
+                ## TODO Add Fanout Here
+                ## For subtype, value in results_dictionary[cname].items()
+                  ## If Fanout meets grain
+                    ## Synthetic Grain Name
 
         else:
             results_dictionary = {"type" : {"subtype", "value"}}
@@ -276,13 +391,21 @@ class Host:
 
         myresults = dict()
 
-        for this_collection in self.base_config_file["collections"].keys():
+        for this_collection, this_collection_definition in self.base_config_file["collections"].items():
+            
+            ## TODO Add Default Grain Evaluation Here
             self.logger.info("Collection {} Processing".format(this_collection))
+            
+            if self.eval_dg(this_collection_definition.get("grain_limit", list())) is True:
 
-            this_result = self.getone(this_collection, self.base_config_file["collections"][this_collection])
-
-            myresults[this_collection] = this_result[this_collection]
-
+                this_result = self.getone(this_collection, this_collection_definition)
+                
+                ## TODO This changes to collect fan out definitions
+                myresults[this_collection] = this_result[this_collection]
+            else:
+                self.logger.info("Collection {} Ignored because of Grain Limitations.".format(this_collection))
+            
+        # Add Host_host results Special Case
         myresults["host_host"] = self.mown.to_dict(noargs=True)
 
         return myresults
@@ -407,6 +530,41 @@ class Host:
 
         return response_doc
 
+    def eval_dg(self, dg_def):
+        
+        '''
+        Take a look at the grain definition and the default grains and see if we
+        have a match
+        '''
+        
+        this_pass = True
+        
+        for this_def in dg_def:
+            
+            this_jq = this_def.get("jq", None)
+            this_regex = this_def.get("regex", None)
+            this_negate = this_def.get("negate", False)
+            
+            c_eval = None
+            
+            if this_jq is not None:
+                c_eval = pyjq.first(this_jq, self.default_grain)
+                
+            if c_eval is not None and this_regex is not None:
+                c_eval = re.search(this_regex, c_eval)
+            
+            if c_eval is None and this_negate is True:
+                continue
+            elif c_eval is None:
+                this_pass = False
+                break
+            elif c_eval is not None:
+                # I've a result continue to next check
+                continue
+        
+        return this_pass
+                
+
     def getbasedata(self):
 
         '''
@@ -420,6 +578,8 @@ class Host:
         basedata["collection_timestamp"] = int(time.time())
 
         return basedata
+    
+    ## Read Default Grain Evaluator
 
     def ipintel(self):
 

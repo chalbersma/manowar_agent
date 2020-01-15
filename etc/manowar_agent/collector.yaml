@@ -22,6 +22,7 @@ collections:
     saltargs: []
     saltkwargs: {}
     jq_parse: 'del(.compiled_with) | [ to_entries | .[] | { (.key) : (.value| tostring ) }] | add'
+    error_hint: "Apache may not be installed."
   apache_compiled_flags:
     salt: true
     multi: true
@@ -29,16 +30,19 @@ collections:
     saltargs: []
     saltkwargs: {}
     jq_parse: '.compiled_with | [.[] | { (.) : "SET" }] | add'
+    error_hint: "Apache may not be installed."
   apache_modules:
     salt: true
     multi: true
     saltfactor: "apache.modules"
     jq_parse: '[ to_entries[] | .value[] as $v | {($v | tostring) : (.key)} ] | add '
+    error_hint: "Apache may not be installed."
   apache_vhosts:
     salt: true
     multi: true
     saltfactor: "apache.vhosts"
     jq_parse: '[to_entries | .[] | .key as $top | .value | to_entries | .[] | {"\($top)-\(.key)-vhost_name": .value.vhost, "\($top)-\(.key)-vhost_conf" : .value.conf }] | add'
+    error_hint: "Apache may not be installed."
 #  cpan_installed:
 #    salt: true
 #    multi: true
@@ -53,6 +57,9 @@ collections:
     saltargs: ["lsb_release -sc"]
     saltkwargs: {}
     jq_parse: "."
+    grain_limit:
+      - jq: ".kernel"
+        regex: Linux
   rkernel:
     salt: true
     multi: false

@@ -154,7 +154,7 @@ def docoll(config_items=False, noupload=False) :
     this_host = Host(minion_file=config_items["salt"].get("minion_file", "minion"), \
                      base_config_file=config_items["stingcell"]["collection_config_file"], \
                      local_cols=(config_items["stingcell"].get("local_collections", False), \
-                                 config_items["stingcell"].get("local_collections_location", "/etc/stingcell/collections.d")),
+                                 config_items["stingcell"].get("local_collections_location", "/etc/manowar_agent/collections.d")),
                      host_configs=config_items["hostinfo"],
                      ipintel_configs=config_items["ipintel"],
                      noupload=NOUPLOAD,

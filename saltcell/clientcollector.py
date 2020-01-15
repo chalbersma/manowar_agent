@@ -114,7 +114,7 @@ class Host:
             template_string = json.dumps(uh_obj)
             do_json = True
         
-        template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(template_string)
+        template = jinja2.Environment(loader=jinja2.BaseLoader).from_string(template_string) #nosec
         
         rendered_string = template.render(**pump)
         

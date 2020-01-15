@@ -123,7 +123,7 @@ class Host:
         else:
             return_obj = rendered_string
         
-        return rendered_string
+        return return_obj
 
     def eval_upload(self):
 
@@ -371,12 +371,37 @@ class Host:
                         results_dictionary[cname]["default"] = str(this_find)
                 
                 if try_fanout is True:
-                    pass
-                
-                ## TODO Add Fanout Here
-                ## For subtype, value in results_dictionary[cname].items()
-                  ## If Fanout meets grain
-                    ## Synthetic Grain Name
+                    for fanout_definition in collection.get("fan_out", list()):
+                        
+                        fanout_name = fanout_definition["name"]
+                        
+                        self.logger.info("Processing Fanout Definition {} on {}".format(fanout_name, cname))
+                        
+                        for subtype, value in results_dictionary[cname].items():
+                            
+                            dynamic_jinja = {"subtype" : subtype, "value" : value}
+                            
+                            synthetic_cname = "=>".join([cname, subtype, fanout_name])
+                            
+                            if self.eval_dg(fanout_definition.get("grain_limit", list())) is True:
+                                
+                                fanout_values = self.getone(synthetic_cname, fanout_definition,
+                                                            jinja=True,
+                                                            dyn_jinja_dict=dynamic_jinja)
+                                
+                                if fanout_values is not None:
+                                    # Add to Results Dictionary
+                                    results_dictionary[synthetic_cname] = fanout_values[synthetic_cname]
+                                else:
+                                    self.logger.warning("Unable to get fanout for {} {} on {}/{}".format(cname,
+                                                                                                         synthetic_cname,
+                                                                                                         subtype,
+                                                                                                         value))
+                            else:
+                                
+                                self.logger.debug("Fanout rule {} doesn't meet grain limitation.".format(fanout_name))
+                else:
+                    self.logger.debug("Fanout Not attempted for {}".format(cname))
 
         else:
             results_dictionary = {"type" : {"subtype", "value"}}
@@ -393,15 +418,25 @@ class Host:
 
         for this_collection, this_collection_definition in self.base_config_file["collections"].items():
             
-            ## TODO Add Default Grain Evaluation Here
             self.logger.info("Collection {} Processing".format(this_collection))
             
             if self.eval_dg(this_collection_definition.get("grain_limit", list())) is True:
 
                 this_result = self.getone(this_collection, this_collection_definition)
                 
-                ## TODO This changes to collect fan out definitions
+                # Default Collection
                 myresults[this_collection] = this_result[this_collection]
+                
+                # Handle Fan Outs
+                for fan_coll, fan_vals in this_result.items():
+                    if fan_coll != this_collection:
+                        
+                        if fan_coll in myresults.keys():
+                            self.logger.warning("Fan Out Collection {} Matches Primary Collection, Ignoring.".format(fan_coll))
+                        else:
+                            myresults[fan_coll] = fan_vals
+                
+                
             else:
                 self.logger.info("Collection {} Ignored because of Grain Limitations.".format(this_collection))
             

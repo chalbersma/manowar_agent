@@ -81,6 +81,18 @@ collections:
     saltargs: []
     saltkwargs: {}
     jq_parse: "[.[] | { (.name) : (.shell) }] | add"
+    fan_out:
+      - name: user_details
+        salt: true
+        multi: true
+        saltfactor: "user.info"
+        saltargs: 
+          - "{{ subtype }}"
+        saltkwargs: {}
+        jq_parse: "[ to_entries | .[] | {(.key) : (.value | tostring)} ] | add"
+        grain_limit:
+          - jq: ".kernel"
+            regex: Linux
   services:
     salt: true
     multi: true

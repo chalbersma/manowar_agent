@@ -64,9 +64,9 @@ if __name__ == "__main__":
 
     if args.config is False:
         logger.debug("No Config File Given Look in Default Locations")
-        for default_file in ("./etc/manowar_agent/saltcell.yaml", \
-                             "./saltcell.yaml", \
-                             "/etc/manowar_agent/saltcell.yaml", \
+        for default_file in ("/etc/manowar_agent/saltcell.yaml",
+                             "./etc/manowar_agent/saltcell.yaml",
+                             "./saltcell.yaml",
                              "/usr/local/etc/manowar_agent/saltcell.yaml"):
 
             if os.path.isfile(default_file) and os.access(default_file, os.R_OK):

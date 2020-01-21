@@ -323,14 +323,17 @@ class Host:
                 self.logger.debug("Error : {}".format(salt_ssh_error))
                 this_find = None
             else:
-                if run_result.check_returncode() != 0:
+                
+                logger.debug(run_result.stdout)
+                try:
+                    run_result.check_returncode():
+                except Exception as process_error:
                     self.logger.error("Unable to Run Salt SSH Command for {}".format(self.kwargs.get("remote_host_id", None)))
                     self.logger.warning("Error : {}".format(run_result.stderr))
                     this_find = None
                 else:
                     # I have Results
                     try:
-                        
                         returned_results = json.loads(run_result.stdout.decode("utf-8"))
                         this_find = returned_results[self.kwargs.get("remote_host_id", None)]
                         

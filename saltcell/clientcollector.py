@@ -13,6 +13,7 @@ import os
 import sys
 import urllib
 import re
+import shlex
 
 # Until I can workaround the salt-ssh python api problem.
 import subprocess #nosec
@@ -302,18 +303,20 @@ class Host:
             
             try:
                 
-                run_dir = self.kwargs.get("salt_ssh_basedir", "/etc/salt"))
+                run_dir = self.kwargs.get("salt_ssh_basedir", "/etc/salt")
                 
                 if os.access(run_dir, "/etc/salt"), os.W_OK):
                     self.logger.error("Unable to Write to Run Directory : {}".format(run_dir))
                     self.logger.debug("Current Directory : {}".format(os.getcwd()))
                     
                     raise PermissionError("Unable to Access salt_ssh_basedir as Writeable")
+                else:
+                    self.logger.debug("Running command in Directory {}".format(run_dir))
                 
-                super_bad = "salt-ssh {} {} {} {} --output=json {}".format(self.kwargs.get("remote_host_id", None),
-                                                                           saltfactor,
-                                                                           " ".join(saltargs),
-                                                                           " ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()]),
+                super_bad = "salt-ssh {} {} {} {} --output=json {}".format(shlex.quote(kwargs.get("remote_host_id", None)),
+                                                                           shlex.quote(saltfactor),
+                                                                           shlex.quote(" ".join(saltargs)),
+                                                                           shlex.quote(" ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()])),
                                                                            hardcrash)
                 
                 self.logger.debug("Debugging Salt-SSH Call\n\t{}".format(super_bad))

@@ -305,7 +305,7 @@ class Host:
                 
                 run_dir = self.kwargs.get("salt_ssh_basedir", "/etc/salt")
                 
-                if os.access(run_dir, "/etc/salt"), os.W_OK):
+                if os.access(run_dir, os.W_OK) is False:
                     self.logger.error("Unable to Write to Run Directory : {}".format(run_dir))
                     self.logger.debug("Current Directory : {}".format(os.getcwd()))
                     

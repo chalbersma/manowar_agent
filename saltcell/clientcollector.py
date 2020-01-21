@@ -230,7 +230,7 @@ class Host:
                         else:
                             to_collect_items["collections"][this_new_coll_key] = new_coll
         
-        if len(to_collect_items["collections"]) == 0:
+        if len(to_collect_items.get("collections", dict()).keys()) == 0:
             self.logger.warning("No Collections Defined! This is abnormal.")
 
         return to_collect_items
@@ -296,7 +296,7 @@ class Host:
             # CLI options
             
             if self.kwargs.get("hardcrash", True) is True:
-                hardcrash = "--hardcrash"
+                hardcrash = "--hard-crash"
             else:
                 hardcrash = str()
             

@@ -547,9 +547,13 @@ class Host:
             given_args = self.host_configs["uri"].get("arguments", {})
         else:
             given_args = {}
-
+            
         try:
-            ec2_metadata.ec2_metadata.instance_id
+            if self.kwargs.get("remote", False) is False:
+                ec2_metadata.ec2_metadata.instance_id
+            else:
+                raise TypeError("Remote Platform Doesn't Support EC2 Detection.")
+            
         except Exception as ec2_error:
             self.logger.debug("EC2 Instance Detection Failed Likely not AWS : {}".format(ec2_error))
         else:

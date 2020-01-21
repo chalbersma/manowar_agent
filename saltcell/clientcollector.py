@@ -13,7 +13,9 @@ import os
 import sys
 import urllib
 import re
-import subprocess
+
+# Until I can workaround the salt-ssh python api problem.
+import subprocess #nosec
 
 import yaml
 import requests
@@ -301,7 +303,9 @@ class Host:
                                                                            " ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()]),
                                                                            hardcrash)
             
-                run_result = subprocess.run(super_bad, shell=True, stdout=subprocess.PIPE)
+                # This looks bad. It's not the best. Ideally this would use the native salt
+                # SSH api
+                run_result = subprocess.run(super_bad, shell=True, stdout=subprocess.PIPE) #nosec
             
             except Exception as salt_ssh_error:
                 self.logger.error("Unable to Run Salt SSH command for {}".format(self.kwargs.get("remote_host_id", None)))

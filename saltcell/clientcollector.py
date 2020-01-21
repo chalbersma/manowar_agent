@@ -313,7 +313,7 @@ class Host:
                 else:
                     self.logger.debug("Running command in Directory {}".format(run_dir))
                     
-                relative_venv = self.kwargs("relative_venv", False)
+                relative_venv = self.kwargs.get("relative_venv", False)
                 
                 if isinstance(relative_venv, str):
                     self.logger.warning("Running Schedule3.py in a Relative VENV can be dangerous!")

@@ -186,6 +186,7 @@ class Host:
 
         Read Local Collections from Disk.
         '''
+        to_collect_items = dict()
 
         if isinstance(base_config_file, dict):
             # I've been given the configuration
@@ -215,14 +216,22 @@ class Host:
 
             for collection_file in collections_files:
                 try:
-                    # Read Our INI with our data collection rules
-                    this_local_coll = yaml.safe_load(collection_file)
-                except Exception as e: # pylint: disable=broad-except, invalid-name
-                    sys.stderr.write("Bad collection configuration file {} cannot parse: {}".format(collection_file, str(e)))
+                    with open(collection_file, "r") as collection_file_obj:
+                        this_local_coll = yaml.safe_load(collection_file_obj)
+                except Exception as collection_parse_error:
+                    self.logger.error("Bad collection configuration file {} cannot parse: {}".format(collection_file))
+                    self.logger.debug("Error : {}".format(collection_parse_error))
                 else:
                     # I've read and parsed this file let's add the things
-                    for this_new_coll_key in this_local_coll.get("collections", {}).keys():
-                        to_collect_items["collections"][this_new_coll_key] = this_local_coll[this_new_coll_key]
+                    for this_new_coll_key, new_coll in this_local_coll.get("collections", {}).items():
+                        if this_new_coll_key in to_collect_items["collections"].keys():
+                            self.logger.warning("Ignoring Collection {} Defined in {} as a duplicate.".format(this_new_coll_key,
+                                                                                                              collecion_file))
+                        else:
+                            to_collect_items["collections"][this_new_coll_key] = new_coll
+        
+        if len(to_collect_items["collections"]) == 0:
+            self.logger.warning("No Collections Defined! This is abnormal.")
 
         return to_collect_items
 
@@ -302,6 +311,8 @@ class Host:
                                                                            " ".join(saltargs),
                                                                            " ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()]),
                                                                            hardcrash)
+                
+                self.logger.debug("Debugging Salt-SSH Calle \n{}".format(super_bad))
             
                 # This looks bad. It's not the best. Ideally this would use the native salt
                 # SSH api
@@ -532,7 +543,7 @@ class Host:
         response_doc = {"is_ec2" : False}
 
 
-        if isinstance(self.host_configs["uri"], dict):
+        if isinstance(self.host_configs.get("uri", None), dict):
             given_args = self.host_configs["uri"].get("arguments", {})
         else:
             given_args = {}

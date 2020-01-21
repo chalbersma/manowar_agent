@@ -312,12 +312,34 @@ class Host:
                     raise PermissionError("Unable to Access salt_ssh_basedir as Writeable")
                 else:
                     self.logger.debug("Running command in Directory {}".format(run_dir))
+                    
+                relative_venv = self.kwargs("relative_venv", False)
                 
-                super_bad = "salt-ssh {} {} {} {} --output=json {}".format(shlex.quote(self.kwargs.get("remote_host_id", None)),
-                                                                           shlex.quote(saltfactor),
-                                                                           shlex.quote(" ".join(saltargs)),
-                                                                           shlex.quote(" ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()])),
-                                                                           hardcrash)
+                if isinstance(relative_venv, str):
+                    self.logger.warning("Running Schedule3.py in a Relative VENV can be dangerous!")
+                    self.logger.info("Releative Venv Command : {}".format(relative_venv))
+                else:
+                    self.logger.debug("Using the System's Python3")
+                    relative_venv = str()
+                
+                    
+                    
+                if len(saltargs) > 0:
+                    saltargs_string = shlex.quote(" ".join(saltargs))
+                else:
+                    saltargs_string = str()
+                
+                if len(saltkwargs.keys()) > 0:
+                    saltkwargs_string = shlex.quote(" ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()]))
+                else:
+                    saltkwargs_string = str()
+                
+                super_bad = "{} salt-ssh {} {} {} {} --output=json {}".format(relative_venv,
+                                                                              shlex.quote(self.kwargs.get("remote_host_id", None)),
+                                                                              shlex.quote(saltfactor),
+                                                                              saltargs_string,
+                                                                              saltkwargs_string,
+                                                                              hardcrash)
                 
                 self.logger.debug("Debugging Salt-SSH Call\n\t{}".format(super_bad))
             

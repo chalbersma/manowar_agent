@@ -313,7 +313,7 @@ class Host:
                 else:
                     self.logger.debug("Running command in Directory {}".format(run_dir))
                 
-                super_bad = "salt-ssh {} {} {} {} --output=json {}".format(shlex.quote(kwargs.get("remote_host_id", None)),
+                super_bad = "salt-ssh {} {} {} {} --output=json {}".format(shlex.quote(self.kwargs.get("remote_host_id", None)),
                                                                            shlex.quote(saltfactor),
                                                                            shlex.quote(" ".join(saltargs)),
                                                                            shlex.quote(" ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()])),
@@ -352,11 +352,6 @@ class Host:
                         this_find = None
                     else:
                         self.logger.debug("Salt-ssh Find : \n{}".format(this_find))
-                    
-            finally:
-                
-                # Change Back to Original Dir
-                os.chdir(original_dir)
         
         return this_find
 

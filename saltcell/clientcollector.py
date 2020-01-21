@@ -316,7 +316,7 @@ class Host:
                                                                            " ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()]),
                                                                            hardcrash)
                 
-                self.logger.debug("Debugging Salt-SSH Calle \n{}".format(super_bad))
+                self.logger.debug("Debugging Salt-SSH Call\n\t{}".format(super_bad))
             
                 # This looks bad. It's not the best. Ideally this would use the native salt
                 run_args = {"shell" : True,
@@ -333,7 +333,7 @@ class Host:
                 
                 logger.debug(run_result.stdout)
                 try:
-                    run_result.check_returncode():
+                    run_result.check_returncode()
                 except Exception as process_error:
                     self.logger.error("Unable to Run Salt SSH Command for {}".format(self.kwargs.get("remote_host_id", None)))
                     self.logger.warning("Error : {}".format(run_result.stderr))

@@ -319,7 +319,10 @@ class Host:
                 else:
                     # I have Results
                     try:
-                        this_find = json.loads(run_result.stdout.decode("utf-8"))
+                        
+                        returned_results = json.loads(run_result.stdout.decode("utf-8"))
+                        this_find = returned_results[self.kwargs.get("remote_host_id", None)]
+                        
                     except Exception as read_result_json_error:
                         self.logger.error("Had Successful Saltssh But an Error when Parsing for {}".format(self.kwargs.get("remote_host_id", None)))
                         this_find = None

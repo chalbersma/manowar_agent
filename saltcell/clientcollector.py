@@ -302,9 +302,13 @@ class Host:
             
             try:
                 
-                original_dir = os.getcwd()
+                run_dir = self.kwargs.get("salt_ssh_basedir", "/etc/salt"))
                 
-                os.chdir(self.kwargs.get("salt_ssh_basedir", "/etc/salt"))
+                if os.access(run_dir, "/etc/salt"), os.W_OK):
+                    self.logger.error("Unable to Write to Run Directory : {}".format(run_dir))
+                    self.logger.debug("Current Directory : {}".format(os.getcwd()))
+                    
+                    raise PermissionError("Unable to Access salt_ssh_basedir as Writeable")
                 
                 super_bad = "salt-ssh {} {} {} {} --output=json {}".format(self.kwargs.get("remote_host_id", None),
                                                                            saltfactor,
@@ -315,9 +319,12 @@ class Host:
                 self.logger.debug("Debugging Salt-SSH Calle \n{}".format(super_bad))
             
                 # This looks bad. It's not the best. Ideally this would use the native salt
-                # SSH api
-                run_result = subprocess.run(super_bad, shell=True, stdout=subprocess.PIPE) #nosec
-            
+                run_args = {"shell" : True,
+                            "stdout" : subprocess.PIPE,
+                            "cwd" : run_dir}
+                
+                run_result = subprocess.run(super_bad, **run_args) #nosec 
+                
             except Exception as salt_ssh_error:
                 self.logger.error("Unable to Run Salt SSH command for {}".format(self.kwargs.get("remote_host_id", None)))
                 self.logger.debug("Error : {}".format(salt_ssh_error))

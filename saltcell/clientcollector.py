@@ -13,6 +13,7 @@ import os
 import sys
 import urllib
 import re
+import subprocess
 
 import yaml
 import requests
@@ -234,18 +235,20 @@ class Host:
         # Any Earlier and I'll fubar the logger
         import salt.config
         import salt.client
+        import salt.client.ssh.client
         
         if self.kwargs.get("remote", False) is False:
 
+            self.logger.debug("This is a local collection, start my Minion.")
+            
             minion_opts = salt.config.minion_config(self.minion_file)
 
             salt_caller = salt.client.Caller(c_path=".", mopts=minion_opts)
         
         else:
             
-            # Make Salt_Caller a SSH Caller as this is a remote host collection
-            salt_caller = salt.client.ssh.client.SSHClient(c_path=self.kwargs.get("master_dir", "/etc/manowar/salt/master"),
-                                                           mopts=self.kwargs.get("salt_ssh_mopts", None))
+            self.logger.debug("Remote Connection no Minion required.")
+            salt_caller = None
         
         return salt_caller
 
@@ -273,22 +276,56 @@ class Host:
                 self.logger.error("Unable to Run Salt Command for {}".format(saltfactor))
                 self.logger.debug("Failed Commmand Full : {} {} {}".format(saltfactor, saltargs, saltkwargs))
                 self.logger.debug("Error : {}".format(salt_call_error))
+                this_find = None
             else:
                 self.logger.debug("Return for {} : {}".format(saltfactor, this_find))
                 
         else:
+            # Okay so the python api is hella suspect Instead we're going to do some dirty and use the salt-ssh
+            # CLI options
+            
+            if self.kwargs.get("hardcrash", True) is True:
+                hardcrash = "--hardcrash"
+            else:
+                hardcrash = str()
+            
             try:
-                this_find = self.salt_caller.cmd(self.kwargs.get("remote_host_id", None),
-                                                 saltfactor,
-                                                 arg=saltargs,
-                                                 kwarg=saltkwargs,
-                                                 timeout=self.kwargs.get("remote_timeout", 500))
+                
+                original_dir = os.getcwd()
+                
+                os.chdir(self.kwargs.get("salt_ssh_basedir", "/etc/salt"))
+                
+                super_bad = "salt-ssh {} {} {} {} --output=json {}".format(self.kwargs.get("remote_host_id", None),
+                                                                           saltfactor,
+                                                                           " ".join(saltargs),
+                                                                           " ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()]),
+                                                                           hardcrash)
+            
+                run_result = subprocess.run(super_bad, shell=True, stdout=subprocess.PIPE)
+            
             except Exception as salt_ssh_error:
                 self.logger.error("Unable to Run Salt SSH command for {}".format(self.kwargs.get("remote_host_id", None)))
                 self.logger.debug("Error : {}".format(salt_ssh_error))
+                this_find = None
             else:
-                ## TODO do the needful to pull out the equivalent this_find
-                pass
+                if run_result.check_returncode() != 0:
+                    self.logger.error("Unable to Run Salt SSH Command for {}".format(self.kwargs.get("remote_host_id", None)))
+                    self.logger.warning("Error : {}".format(run_result.stderr))
+                    this_find = None
+                else:
+                    # I have Results
+                    try:
+                        this_find = json.loads(run_result.stdout.decode("utf-8"))
+                    except Exception as read_result_json_error:
+                        self.logger.error("Had Successful Saltssh But an Error when Parsing for {}".format(self.kwargs.get("remote_host_id", None)))
+                        this_find = None
+                    else:
+                        self.logger.debug("Salt-ssh Find : \n{}".format(this_find))
+                    
+            finally:
+                
+                # Change Back to Original Dir
+                os.chdir(original_dir)
         
         return this_find
 

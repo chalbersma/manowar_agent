@@ -346,7 +346,8 @@ class Host:
                 # This looks bad. It's not the best. Ideally this would use the native salt
                 run_args = {"shell" : True,
                             "stdout" : subprocess.PIPE,
-                            "cwd" : run_dir}
+                            "cwd" : run_dir,
+                            "executable" : self.kwargs.get("shell", "/bin/bash")}
                 
                 run_result = subprocess.run(super_bad, **run_args) #nosec 
                 
@@ -356,7 +357,7 @@ class Host:
                 this_find = None
             else:
                 
-                logger.debug(run_result.stdout)
+                self.logger.debug(run_result.stdout)
                 try:
                     run_result.check_returncode()
                 except Exception as process_error:

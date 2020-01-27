@@ -341,19 +341,27 @@ class Host:
                                                                               saltkwargs_string,
                                                                               hardcrash)
                 
-                self.logger.debug("Debugging Salt-SSH Call\n\t{}".format(super_bad))
+                #self.logger.debug("Debugging Salt-SSH Call\n\t{}".format(super_bad))
             
                 # This looks bad. It's not the best. Ideally this would use the native salt
                 run_args = {"shell" : True,
                             "stdout" : subprocess.PIPE,
                             "cwd" : run_dir,
-                            "executable" : self.kwargs.get("shell", "/bin/bash")}
+                            "executable" : self.kwargs.get("shell", "/bin/bash"),
+                            "timeout" : self.kwargs.get("remote_per_col_timeout", 180)}
                 
                 run_result = subprocess.run(super_bad, **run_args) #nosec 
                 
+            except subprocess.TimeoutExpired as timeout_error:
+                self.logger.error("Collecting {} from {} timed out".format(saltfactor, 
+                                                                           self.kwargs.get("remote_host_id", None)))
+                self.logger.info("Timeout Setting : {}".format(run_args["timeout"]))
+                self.logger.debug("Attempted Command : {}".format(super_bad))
+
             except Exception as salt_ssh_error:
                 self.logger.error("Unable to Run Salt SSH command for {}".format(self.kwargs.get("remote_host_id", None)))
                 self.logger.debug("Error : {}".format(salt_ssh_error))
+                self.logger.debug("Attempted Command : {}".format(super_bad))
                 this_find = None
             else:
                 

@@ -334,7 +334,7 @@ class Host:
                 else:
                     saltkwargs_string = str()
                 
-                super_bad = "{} salt-ssh {} {} {} {} --output=json {}".format(relative_venv,
+                super_bad = "{} salt-ssh -W {} {} {} {} --output=json {}".format(relative_venv,
                                                                               shlex.quote(self.kwargs.get("remote_host_id", None)),
                                                                               shlex.quote(saltfactor),
                                                                               saltargs_string,

@@ -335,11 +335,11 @@ class Host:
                     saltkwargs_string = str()
                 
                 super_bad = "{} salt-ssh -W {} {} {} {} --output=json {}".format(relative_venv,
-                                                                              shlex.quote(self.kwargs.get("remote_host_id", None)),
-                                                                              shlex.quote(saltfactor),
-                                                                              saltargs_string,
-                                                                              saltkwargs_string,
-                                                                              hardcrash)
+                                                                                 shlex.quote(self.kwargs.get("remote_host_id", None)),
+                                                                                 shlex.quote(saltfactor),
+                                                                                 saltargs_string,
+                                                                                 saltkwargs_string,
+                                                                                 hardcrash)
                 
                 #self.logger.debug("Debugging Salt-SSH Call\n\t{}".format(super_bad))
             
@@ -348,7 +348,7 @@ class Host:
                             "stdout" : subprocess.PIPE,
                             "cwd" : run_dir,
                             "executable" : self.kwargs.get("shell", "/bin/bash"),
-                            "timeout" : self.kwargs.get("remote_per_col_timeout", 180)}
+                            "timeout" : self.kwargs.get("remote_per_col_timeout", 60)}
                 
                 run_result = subprocess.run(super_bad, **run_args) #nosec 
                 

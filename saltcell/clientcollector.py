@@ -300,6 +300,22 @@ class Host:
                 hardcrash = "--hard-crash"
             else:
                 hardcrash = str()
+
+
+            # What to Do about Host Keys. By default accept new keys on first seen basis
+            #   and dump if there's a future mismatch.
+
+            s_hkey = "--ignore-host-keys"
+
+            if self.kwargs.get("strict_hostkeys", "known") == "strict":
+                self.logger.debug("Respecting all Host key Limitations.")
+                s_hkey = str()
+            elif self.kwargs.get("strict_hostkeys", "known") == "known": 
+                # Default Accepts New keys but blocks on Host Key Changes
+                s_hkey = "--ignore-host-keys"
+            elif self.kwargs.get("strict_hostkeys", "known") == "danger": 
+                self.logger.warning("Remote Connection Totally Ignoring Host Key Checking Subsystmes.")
+                s_hkey = "--no-host-keys"
             
             try:
                 

@@ -19,7 +19,7 @@ def __virtual__():
 
     return __virtualname__
 
-def guess():
+def guess(*opts, **kwargs):
 
     """
     Guess the Platform I'm Running On
@@ -42,11 +42,8 @@ def guess():
 
     if "error" in value.keys():
         # Overwrite Error with New Hotness
-        value = saltcell.mow_platform.guess(opts)
+        value = saltcell.mow_platform.guess()
     else:
         logger.debug("Error in Import Ignore Run")
 
     return value
-
-
-

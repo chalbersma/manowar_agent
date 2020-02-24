@@ -8,9 +8,9 @@ current platform and Return the data associated therein.
 """
 
 #import salt
+import logging
 import requests
 import urllib.parse
-
 
 def plat_aws():
     """
@@ -26,7 +26,7 @@ def plat_aws():
     v2_tput_url = "http://169.254.169.254/latest/api/token"
 
     try:
-        tput_request = request.put(v2_tput_url, headers=v2_tput_headers)
+        tput_request = requests.put(v2_tput_url, headers=v2_tput_headers)
         token = tput_request.text
     except Exception as v2_error:
         logger.info("I do not believe this is an AWS Host.")
@@ -38,7 +38,7 @@ def plat_aws():
                 v2_tget_headers = {"X-aws-ec2-metadata-token": token}
                 v2_tget_url = "http://169.254.169.254/latest/dynamic/instance-identity/document"
 
-                tput_dyn_doc = request.get(v2_tget_url, v2_tget_headers).json()
+                tput_dyn_doc = requests.get(v2_tget_url, v2_tget_headers).json()
             except Exception as tget_error:
                 logger.error("Either v2 API is turned off or this might not be AWS.")
                 response_doc["belife_reason"] = "No Dynmic Doc Available from API"

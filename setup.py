@@ -110,7 +110,9 @@ setuptools.setup(
         "ec2_metadata"
     ],
     scripts=["manowar_agent"],
-    data_files=[("etc/manowar_agent", ["etc/manowar_agent/collector.yaml", "etc/manowar_agent/minion", "etc/manowar_agent/saltcell.yaml"])]
+    data_files=[("etc/manowar_agent", ["etc/manowar_agent/collector.yaml", "etc/manowar_agent/minion", "etc/manowar_agent/saltcell.yaml"]),
+                ("etc/manowar_agent/state/_modules/", ["etc/manowar_agent/state/_modules/platpi.py"])
+               ]
 )
 
 if upload_to_pypi is not False:

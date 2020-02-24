@@ -112,3 +112,4 @@ venv.bak/
 /share/
 /manowar_agent.kdev4
 etc/salt/*
+/etc/manowar_agent/etc/salt/minion_id

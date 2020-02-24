@@ -112,6 +112,6 @@ def guess(*upstream_opts, **upstream_kwargs):
 
     guess_data = {**this_guess.get("data", dict()), "uri" : this_guess["uri"], "ip_intel" : this_guess.get("ip_intel", list())}
 
-    return best_guess
+    return guess_data
 
 

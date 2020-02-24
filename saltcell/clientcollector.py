@@ -561,6 +561,7 @@ class Host:
 
         if self.host_configs.get("do_platpi", True) is True:
             platform_guess = self.do_call("platpi.guess")
+            self.logger.debug("Guessed Platform : {}".format(platform_guess))
 
         if isinstance(self.host_configs["uri"], str):
             # Send My URI In Naked
@@ -573,7 +574,7 @@ class Host:
             if "resource" not in self.host_configs.keys():
                 self.logger.warning("Working around missing resource, setting resource to hostname")
                 mown_configs["resource"] = socket.getfqdn()
-        elif urllib.parse.urlparse(self.platform_guess.get("uri", "unknown://::::uknown")).scheme != "unknown":
+        elif urllib.parse.urlparse(platform_guess.get("uri", "unknown://::::uknown")).scheme != "unknown":
             # If my Platform Guess Hasn't given me an Unknown Response Use the data
             # From my Platform Guess
             self.logger.debug("URI Taken from Platpi Guess")
@@ -729,8 +730,6 @@ class Host:
 
         return basedata
     
-    ## Read Default Grain Evaluator
-
     def ipintel(self):
 
         """

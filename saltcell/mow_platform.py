@@ -57,22 +57,23 @@ def plat_aws():
                     if hypervisor_uuid.startswith("ec2"):
                         response_doc["belief_score"] = True
                         response_doc["belief_score"] = 1.0
-                        service = "ec2"
                     else:
                         service = hypervisor_uuid[0:3]
 
-                    response_doc["data"]["aws_service_guess"] = service
-                    response_doc["data"]["aws_hypervisor_uuid"] = hypervisor_uuid
+                response_doc["data"]["aws_service_guess"] = service
+                response_doc["data"]["aws_hypervisor_uuid"] = hypervisor_uuid
+
+                logger.debug("AWS Service Guessed to be : {}".format(service))
 
                 for k, v in tput_dyn_doc.items():
                     # Place My Known Data Here
-                    response_doc["data"]["aws_{}".format(k)] = v
+                    response_doc["data"]["aws_{}".format(k.lower())] = v
 
                 # Guess ARN
-                response_doc["data"]["arn"] = "arn:{aws_service_guess}:{aws_region}:{aws_accountId}:instance/{aws_instanceId}".format(response_doc["data"])
+                response_doc["data"]["arn"] = "arn:{aws_service_guess}:{aws_region}:{aws_accountid}:instance/{aws_instanceid}".format(response_doc["data"])
                 response_doc["data"]["arn_args"] = {**tput_dyn_doc}
                 response_doc["data"]["arn_args_encoded"] = urllib.parse.urlencode(tput_dyn_doc)
-                response_doc["uri"] = "arn://{aws_service_guess}:{aws_region}:{aws_accountId}:instance/{aws_instanceId}?{arn_args_encoded}".format(response_doc["data"])
+                response_doc["uri"] = "arn://{aws_service_guess}:{aws_region}:{aws_accountid}:instance/{aws_instanceid}?{arn_args_encoded}".format(response_doc["data"])
 
         else:
             response_doc["belief_reason"] = "Bad API Response"

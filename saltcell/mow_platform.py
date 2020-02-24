@@ -20,16 +20,18 @@ def plat_aws():
     logger = logging.getLogger("mow_platform.plat_aws")
 
     response_doc = {"belief" : False,
-                    "belief_score" : 0}
+                    "belief_score" : 0,
+                    "uri" : "unknown://::::unknown"}
 
-    v2_tput_headers = {"X-aws-ec2-metadata-token-ttl-seconds" : 21600}
+    v2_tput_headers = {"X-aws-ec2-metadata-token-ttl-seconds" : "21600"}
     v2_tput_url = "http://169.254.169.254/latest/api/token"
 
     try:
         tput_request = requests.put(v2_tput_url, headers=v2_tput_headers)
         token = tput_request.text
     except Exception as v2_error:
-        logger.info("I do not believe this is an AWS Host.")
+        logger.info("I do not believe this is an AWS Host as I had an error accessing the API.")
+        logger.debug("Error : {}".format(v2_error))
         response_doc["belief_reson"] = "Error with API Request"
     else:
         if tput_request.status_code == requests.codes.ok:
@@ -43,18 +45,19 @@ def plat_aws():
                 logger.error("Either v2 API is turned off or this might not be AWS.")
                 response_doc["belife_reason"] = "No Dynmic Doc Available from API"
             else:
-                response_doc["belief"] = True
-                response_doc["belief_score"] = 0.9
+                response_doc["belief_score"] = 0.8
                 response_doc["data"] = dict()
 
                 # Time to Guess if Service is ec2
                 service = "ec2"
 
-                with open("/sys/hypervisor/uuid/") as hypervisor_uuid_file:
+                with open("/sys/hypervisor/uuid", "r") as hypervisor_uuid_file:
                     hypervisor_uuid = hypervisor_uuid_file.read()
 
                     if hypervisor_uuid.startswith("ec2"):
+                        response_doc["belief_score"] = True
                         response_doc["belief_score"] = 1.0
+                        service = "ec2"
                     else:
                         service = hypervisor_uuid[0:3]
 

@@ -64,7 +64,7 @@ def plat_aws():
                     response_doc["data"]["aws_service_guess"] = service
                     response_doc["data"]["aws_hypervisor_uuid"] = hypervisor_uuid
 
-                for k, v in tput_dyn_doc:
+                for k, v in tput_dyn_doc.items():
                     # Place My Known Data Here
                     response_doc["data"]["aws_{}".format(k)] = v
 
@@ -75,7 +75,7 @@ def plat_aws():
                 response_doc["uri"] = "arn://{aws_service_guess}:{aws_region}:{aws_accountId}:instance/{aws_instanceId}?{arn_args_encoded}".format(response_doc["data"])
 
         else:
-            response_doc["belife_reason"] = "Bad API Response"
+            response_doc["belief_reason"] = "Bad API Response"
 
     return response_doc
 

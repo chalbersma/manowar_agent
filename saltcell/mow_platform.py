@@ -40,7 +40,7 @@ def plat_aws():
                 v2_tget_headers = {"X-aws-ec2-metadata-token": token}
                 v2_tget_url = "http://169.254.169.254/latest/dynamic/instance-identity/document"
 
-                tput_dyn_doc = requests.get(v2_tget_url, v2_tget_headers).json()
+                tput_dyn_doc = requests.get(v2_tget_url, headers=v2_tget_headers).json()
             except Exception as tget_error:
                 logger.error("Either v2 API is turned off or this might not be AWS.")
                 response_doc["belife_reason"] = "No Dynmic Doc Available from API"

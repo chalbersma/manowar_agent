@@ -23,7 +23,7 @@ import requests
 import pyjq
 import jinja2
 # For AWS Service Detection
-import ec2_metadata
+#import ec2_metadata
 
 import saltcell.mown
 
@@ -51,13 +51,7 @@ class Host:
         self.salt_caller = self.start_minion()
 
         self.base_config_file = self.get_configs(base_config_file, local_cols)
-        
-        # Platform Detection (Possible External Future)
-        ## EC2 Detection
-        self.ec2_data = self.get_aws_ec2_data(get_collections=True)
 
-        # elif self.next_platform is true for the future
-        
         # Get Taxonomy Data
         self.mown = self.gethostmeta()
         self.basedata = self.getbasedata()
@@ -68,12 +62,12 @@ class Host:
         self.collection_info = self.getall_collections()
         
         # Special Case EC2 Data
-        if self.ec2_data["is_ec2"] is True:
-            self.collection_info["aws_info"] = self.ec2_data["aws_info"]
+        #if self.ec2_data["is_ec2"] is True:
+        #    self.collection_info["aws_info"] = self.ec2_data["aws_info"]
 
             # Add IP Data
-            self.collection_info["ipv4_addr"] = {**self.collection_info["ipv4_addr"], **self.ec2_data["aws_ipv4"]}
-            self.collection_info["ipv6_addr"] = {**self.collection_info["ipv6_addr"], **self.ec2_data["aws_ipv6"]}
+        #    self.collection_info["ipv4_addr"] = {**self.collection_info["ipv4_addr"], **self.ec2_data["aws_ipv4"]}
+        #    self.collection_info["ipv6_addr"] = {**self.collection_info["ipv6_addr"], **self.ec2_data["aws_ipv6"]}
 
         # Process IP Intel
         self.ipintel_configs = ipintel_configs
@@ -557,29 +551,35 @@ class Host:
 
     def gethostmeta(self):
 
-        '''
+        """
         Takes the host metadata given and stores it puts defaults for nothing.
 
         mown
-        '''
+        """
 
         mown_configs = {}
 
+        if self.host_configs.get("do_platpi", True) is True:
+            platform_guess = self.do_call("platpi.guess")
+
         if isinstance(self.host_configs["uri"], str):
             # Send My URI In Naked
+            self.logger.debug("URI Given Explicitly Using That")
             mown_configs = self.host_configs
-        else:
+        elif isinstance(self.host_configs["uri"], dict):
+            self.logger.debug("URI Args Given in 'broken out' fashion Using That.")
             mown_configs = {**self.host_configs["uri"]}
 
             if "resource" not in self.host_configs.keys():
+                self.logger.warning("Working around missing resource, setting resource to hostname")
                 mown_configs["resource"] = socket.getfqdn()
-
-        if self.host_configs.get("do_aws", True) is True:
-            # If AWS Service Detection is Not Turned Off in Configuration
-            if self.ec2_data["is_ec2"] is True:
-                mown_configs = {"uri" : self.ec2_data["uri"]}
-            else:
-                self.logger.debug("Not Detected as an AWS EC2 Instance.")
+        elif urllib.parse.urlparse(self.platform_guess.get("uri", "unknown://::::uknown")).scheme != "unknown":
+            # If my Platform Guess Hasn't given me an Unknown Response Use the data
+            # From my Platform Guess
+            self.logger.debug("URI Taken from Platpi Guess")
+            mown_configs = self.platform_guess["uri"]
+        else:
+            self.logger.warning("No URI/Hostname Given, this Could get Interesting")
 
         self.logger.debug("MOWN as Configured: {}".format(mown_configs))
 
@@ -591,6 +591,7 @@ class Host:
 
     def get_aws_ec2_data(self, get_collections=False):
 
+        ## TODO Ax This
         '''
         Utilize ec_metadata endpoint to get ec2 Data
         '''
@@ -732,11 +733,11 @@ class Host:
 
     def ipintel(self):
 
-        '''
+        """
         Get's IPs from the IPV6 and IPV4 collection
 
         Future work, make configuralbe parsing
-        '''
+        """
 
         found_intel = list()
 

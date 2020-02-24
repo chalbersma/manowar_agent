@@ -141,9 +141,9 @@ if __name__ == "__main__":
 
 def docoll(config_items=False, noupload=False) :
 
-    '''
+    """
     docoll Does the actual collection fo the things
-    '''
+    """
 
     logger = logging.getLogger("saltcell.docoll")
 

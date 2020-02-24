@@ -305,3 +305,10 @@ collections:
     saltargs: []
     saltkwargs: {}
     jq_parse: '[ .[] | { (.) : "IPV6" } ] | add'
+  platpi_guess:
+    salt: true
+    multi: true
+    saltfactor: "platpi.guess"
+    saltargs: []
+    saltkwargs: {}
+    jq_parse: "."

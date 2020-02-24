@@ -124,7 +124,11 @@ def guess(*upstream_opts, **upstream_kwargs):
             best_guess = this_guess
             # Now check the rest of the items.
 
-    guess_data = {**this_guess.get("data", dict()), "uri" : this_guess["uri"], "ip_intel" : this_guess.get("ip_intel", list())}
+    # This is my "good" guess Data
+    all_guess_data = {**best_guess.get("data", dict()), "uri" : best_guess["uri"], "ip_intel" : best_guess.get("ip_intel", list())}
+
+    # Pull out only the key/value items, ignore sub objects
+    guess_data = {k:str(v) for k, v in all_guess_data.items() if isinstance(v, (str, int, float))}
 
     return guess_data
 

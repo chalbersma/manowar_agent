@@ -14,6 +14,7 @@ from salt.utils.decorators import depends
 import logging
 import requests
 import urllib.parse
+import os.path
 
 __virtualname__ = "platpi"
 
@@ -61,11 +62,17 @@ def plat_aws():
 
                 # Time to Guess if Service is ec2
                 service = "ec2"
+                resource_type = "instance/"
 
                 with open("/sys/hypervisor/uuid", "r") as hypervisor_uuid_file:
                     hypervisor_uuid = hypervisor_uuid_file.read()
 
-                    if hypervisor_uuid.startswith("ec2"):
+                    if os.path.exists("/etc/ssh/lightsail_instance_ca.pub"):
+                        response_doc["belife_score"] = True
+                        response_doc["belief_score"] = 1.0
+                        service = "lightsail"
+                        resource_type = "Instance/"
+                    elif hypervisor_uuid.startswith("ec2"):
                         response_doc["belief_score"] = True
                         response_doc["belief_score"] = 1.0
                     else:
@@ -81,7 +88,8 @@ def plat_aws():
                     response_doc["data"]["aws_{}".format(k.lower())] = v
 
                 # Guess ARN
-                response_doc["data"]["arn"] = "arn:{aws_service_guess}:{aws_region}:{aws_accountid}:instance/{aws_instanceid}".format(**response_doc["data"])
+                response_doc["data"]["arn"] = "arn:{aws_service_guess}:{aws_region}:{aws_accountid}:{resource_type}{aws_instanceid}".format(**response_doc["data"],
+                                                                                                                                            resource_type=resource_type)
                 #arn_args = {**tput_dyn_doc}
                 arn_args_encoded = urllib.parse.urlencode(tput_dyn_doc)
                 response_doc["uri"] = "arn://{aws_service_guess}:{aws_region}:{aws_accountid}:instance/{aws_instanceid}?{arn_args_encoded}".format(**response_doc["data"],

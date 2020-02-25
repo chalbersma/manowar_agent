@@ -52,7 +52,7 @@ class Host:
         self.base_config_file = self.get_configs(base_config_file, local_cols)
 
         # Get Taxonomy Data
-        self.mown = self.gethostmeta()
+        self.mown = self.gethostmeta
         self.basedata = self.getbasedata()
         
         self.default_grain = self.do_call("grains.items")

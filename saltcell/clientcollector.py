@@ -561,8 +561,10 @@ class Host:
         if self.host_configs.get("do_platpi", True) is True:
             platform_guess = self.do_call("platpi.guess")
             self.logger.debug("Guessed Platform : {}".format(platform_guess))
+        else:
+            platform_guess = {"uri" : "unknown://::::unknown"}
 
-        if isinstance(self.host_configs["uri"], str):
+        if isinstance(self.host_configs.get("uri", None), str):
             # Send My URI In Naked
             self.logger.debug("URI Given Explicitly Using That")
             mown_configs = self.host_configs
@@ -577,9 +579,10 @@ class Host:
             # If my Platform Guess Hasn't given me an Unknown Response Use the data
             # From my Platform Guess
             self.logger.debug("URI Taken from Platpi Guess")
-            mown_configs = self.platform_guess["uri"]
+            mown_configs = platform_guess["uri"]
         else:
-            self.logger.warning("No URI/Hostname Given, this Could get Interesting")
+            self.logger.warning("No URI/Hostname Given, Using A Naked URI based on Name only")
+            mown_configs["resource"] = socket.getfqdn()
 
         self.logger.debug("MOWN as Configured: {}".format(mown_configs))
 

@@ -5,6 +5,9 @@ hostinfo:
   # or
   # uri: arn://thing:thing:thing
   # This system will add the hostname as the resource
+  #
+  # Leave this block blank if you want platpi to guess the platform.
+  # Useful for AWS items.
   uri:
     partition: partition
     service: servertype

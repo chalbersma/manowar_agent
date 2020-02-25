@@ -82,9 +82,10 @@ def plat_aws():
 
                 # Guess ARN
                 response_doc["data"]["arn"] = "arn:{aws_service_guess}:{aws_region}:{aws_accountid}:instance/{aws_instanceid}".format(**response_doc["data"])
-                response_doc["data"]["arn_args"] = {**tput_dyn_doc}
-                response_doc["data"]["arn_args_encoded"] = urllib.parse.urlencode(tput_dyn_doc)
-                response_doc["uri"] = "arn://{aws_service_guess}:{aws_region}:{aws_accountid}:instance/{aws_instanceid}?{arn_args_encoded}".format(**response_doc["data"])
+                #arn_args = {**tput_dyn_doc}
+                arn_args_encoded = urllib.parse.urlencode(tput_dyn_doc)
+                response_doc["uri"] = "arn://{aws_service_guess}:{aws_region}:{aws_accountid}:instance/{aws_instanceid}?{arn_args_encoded}".format(**response_doc["data"],
+                                                                                                                                                   arn_args_encoded=arn_args_encoded)
 
                 # TODO Add IPV4 & IPV6 Intelligence
 

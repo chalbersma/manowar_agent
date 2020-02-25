@@ -34,8 +34,7 @@ class Host:
     '''
 
     def __init__(self, minion_file="minion", base_config_file=False, local_cols=[False, None],
-                 host_configs=False, ipintel_configs=False,
-                 noupload=False, sapi_configs=False, **kwargs):
+                 ipintel_configs=False, noupload=False, sapi_configs=False, **kwargs):
 
         self.logger = logging.getLogger("saltcell.clientcollector.Host")
         
@@ -43,7 +42,7 @@ class Host:
 
         self.noupload_runtime = noupload
         
-        self.host_configs = host_configs
+        self.host_configs = kwargs.get("host_configs", dict())
 
         # Setup Things
         self.minion_file = minion_file
@@ -514,9 +513,9 @@ class Host:
 
     def getall_collections(self):
 
-        '''
+        """
         Cycles through all configured collections and runs a get_one for each one.
-        '''
+        """
 
         myresults = dict()
 
@@ -567,7 +566,7 @@ class Host:
             # Send My URI In Naked
             self.logger.debug("URI Given Explicitly Using That")
             mown_configs = self.host_configs
-        elif isinstance(self.host_configs["uri"], dict):
+        elif isinstance(self.host_configs.get("uri", None), dict):
             self.logger.debug("URI Args Given in 'broken out' fashion Using That.")
             mown_configs = {**self.host_configs["uri"]}
 

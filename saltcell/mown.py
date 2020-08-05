@@ -162,10 +162,10 @@ class MoWN:
         Assembles the bits
         '''
 
-        netloc = "{}:{}:{}:{}:{}".format(self.partition,
-                                         self.service,
-                                         self.region,
-                                         self.accountid,
+        netloc = "{}:{}:{}:{}:{}".format((self.partition or ""),
+                                         (self.service or ""),
+                                         (self.region or ""),
+                                         (self.accountid or ""),
                                          self.gen_resource())
 
         return netloc

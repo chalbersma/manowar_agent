@@ -13,13 +13,17 @@ import os
 import sys
 import urllib
 import re
+import shlex
+
+# Until I can workaround the salt-ssh python api problem.
+import subprocess #nosec
 
 import yaml
 import requests
 import pyjq
 import jinja2
 # For AWS Service Detection
-import ec2_metadata
+#import ec2_metadata
 
 import saltcell.mown
 
@@ -30,8 +34,7 @@ class Host:
     '''
 
     def __init__(self, minion_file="minion", base_config_file=False, local_cols=[False, None],
-                 host_configs=False, ipintel_configs=False,
-                 noupload=False, sapi_configs=False, **kwargs):
+                 ipintel_configs=False, noupload=False, sapi_configs=False, **kwargs):
 
         self.logger = logging.getLogger("saltcell.clientcollector.Host")
         
@@ -39,7 +42,7 @@ class Host:
 
         self.noupload_runtime = noupload
         
-        self.host_configs = host_configs
+        self.host_configs = kwargs.get("host_configs", dict())
 
         # Setup Things
         self.minion_file = minion_file
@@ -47,13 +50,7 @@ class Host:
         self.salt_caller = self.start_minion()
 
         self.base_config_file = self.get_configs(base_config_file, local_cols)
-        
-        # Platform Detection (Possible External Future)
-        ## EC2 Detection
-        self.ec2_data = self.get_aws_ec2_data(get_collections=True)
 
-        # elif self.next_platform is true for the future
-        
         # Get Taxonomy Data
         self.mown = self.gethostmeta()
         self.basedata = self.getbasedata()
@@ -64,12 +61,12 @@ class Host:
         self.collection_info = self.getall_collections()
         
         # Special Case EC2 Data
-        if self.ec2_data["is_ec2"] is True:
-            self.collection_info["aws_info"] = self.ec2_data["aws_info"]
+        #if self.ec2_data["is_ec2"] is True:
+        #    self.collection_info["aws_info"] = self.ec2_data["aws_info"]
 
             # Add IP Data
-            self.collection_info["ipv4_addr"] = {**self.collection_info["ipv4_addr"], **self.ec2_data["aws_ipv4"]}
-            self.collection_info["ipv6_addr"] = {**self.collection_info["ipv6_addr"], **self.ec2_data["aws_ipv6"]}
+        #    self.collection_info["ipv4_addr"] = {**self.collection_info["ipv4_addr"], **self.ec2_data["aws_ipv4"]}
+        #    self.collection_info["ipv6_addr"] = {**self.collection_info["ipv6_addr"], **self.ec2_data["aws_ipv6"]}
 
         # Process IP Intel
         self.ipintel_configs = ipintel_configs
@@ -183,6 +180,7 @@ class Host:
 
         Read Local Collections from Disk.
         '''
+        to_collect_items = dict()
 
         if isinstance(base_config_file, dict):
             # I've been given the configuration
@@ -212,14 +210,22 @@ class Host:
 
             for collection_file in collections_files:
                 try:
-                    # Read Our INI with our data collection rules
-                    this_local_coll = yaml.safe_load(collection_file)
-                except Exception as e: # pylint: disable=broad-except, invalid-name
-                    sys.stderr.write("Bad collection configuration file {} cannot parse: {}".format(collection_file, str(e)))
+                    with open(collection_file, "r") as collection_file_obj:
+                        this_local_coll = yaml.safe_load(collection_file_obj)
+                except Exception as collection_parse_error:
+                    self.logger.error("Bad collection configuration file {} cannot parse: {}".format(collection_file))
+                    self.logger.debug("Error : {}".format(collection_parse_error))
                 else:
                     # I've read and parsed this file let's add the things
-                    for this_new_coll_key in this_local_coll.get("collections", {}).keys():
-                        to_collect_items["collections"][this_new_coll_key] = this_local_coll[this_new_coll_key]
+                    for this_new_coll_key, new_coll in this_local_coll.get("collections", {}).items():
+                        if this_new_coll_key in to_collect_items["collections"].keys():
+                            self.logger.warning("Ignoring Collection {} Defined in {} as a duplicate.".format(this_new_coll_key,
+                                                                                                              collecion_file))
+                        else:
+                            to_collect_items["collections"][this_new_coll_key] = new_coll
+        
+        if len(to_collect_items.get("collections", dict()).keys()) == 0:
+            self.logger.warning("No Collections Defined! This is abnormal.")
 
         return to_collect_items
 
@@ -234,18 +240,20 @@ class Host:
         # Any Earlier and I'll fubar the logger
         import salt.config
         import salt.client
+        import salt.client.ssh.client
         
         if self.kwargs.get("remote", False) is False:
 
+            self.logger.debug("This is a local collection, start my Minion.")
+            
             minion_opts = salt.config.minion_config(self.minion_file)
 
             salt_caller = salt.client.Caller(c_path=".", mopts=minion_opts)
         
         else:
             
-            # Make Salt_Caller a SSH Caller as this is a remote host collection
-            salt_caller = salt.client.ssh.client.SSHClient(c_path=self.kwargs.get("master_dir", "/etc/manowar/salt/master"),
-                                                           mopts=self.kwargs.get("salt_ssh_mopts", None))
+            self.logger.debug("Remote Connection no Minion required.")
+            salt_caller = None
         
         return salt_caller
 
@@ -273,22 +281,117 @@ class Host:
                 self.logger.error("Unable to Run Salt Command for {}".format(saltfactor))
                 self.logger.debug("Failed Commmand Full : {} {} {}".format(saltfactor, saltargs, saltkwargs))
                 self.logger.debug("Error : {}".format(salt_call_error))
+                this_find = None
             else:
                 self.logger.debug("Return for {} : {}".format(saltfactor, this_find))
                 
         else:
+            # Okay so the python api is hella suspect Instead we're going to do some dirty and use the salt-ssh
+            # CLI options
+            
+            if self.kwargs.get("hardcrash", True) is True:
+                hardcrash = "--hard-crash"
+            else:
+                hardcrash = str()
+
+
+            # What to Do about Host Keys. By default accept new keys on first seen basis
+            #   and dump if there's a future mismatch.
+
+            s_hkey = "--ignore-host-keys"
+
+            if self.kwargs.get("strict_hostkeys", "known") == "strict":
+                self.logger.debug("Respecting all Host key Limitations.")
+                s_hkey = str()
+            elif self.kwargs.get("strict_hostkeys", "known") == "known": 
+                # Default Accepts New keys but blocks on Host Key Changes
+                s_hkey = "--ignore-host-keys"
+            elif self.kwargs.get("strict_hostkeys", "known") == "danger": 
+                self.logger.warning("Remote Connection Totally Ignoring Host Key Checking Subsystmes.")
+                s_hkey = "--no-host-keys"
+            
             try:
-                this_find = self.salt_caller.cmd(self.kwargs.get("remote_host_id", None),
-                                                 saltfactor,
-                                                 arg=saltargs,
-                                                 kwarg=saltkwargs,
-                                                 timeout=self.kwargs.get("remote_timeout", 500))
+                
+                run_dir = self.kwargs.get("salt_ssh_basedir", "/etc/salt")
+                
+                if os.access(run_dir, os.W_OK) is False:
+                    self.logger.error("Unable to Write to Run Directory : {}".format(run_dir))
+                    self.logger.debug("Current Directory : {}".format(os.getcwd()))
+                    
+                    raise PermissionError("Unable to Access salt_ssh_basedir as Writeable")
+                else:
+                    self.logger.debug("Running command in Directory {}".format(run_dir))
+                    
+                relative_venv = self.kwargs.get("relative_venv", False)
+                
+                if isinstance(relative_venv, str):
+                    self.logger.warning("Running Schedule3.py in a Relative VENV can be dangerous!")
+                    self.logger.info("Releative Venv Command : {}".format(relative_venv))
+                else:
+                    self.logger.debug("Using the System's Python3")
+                    relative_venv = str()
+                
+                    
+                    
+                if len(saltargs) > 0:
+                    saltargs_string = shlex.quote(" ".join(saltargs))
+                else:
+                    saltargs_string = str()
+                
+                if len(saltkwargs.keys()) > 0:
+                    saltkwargs_string = shlex.quote(" ".join(["{}={}".format(k, v) for k, v in saltkwargs.items()]))
+                else:
+                    saltkwargs_string = str()
+                
+                super_bad = "{} salt-ssh -W {} {} {} {} --output=json {}".format(relative_venv,
+                                                                                 shlex.quote(self.kwargs.get("remote_host_id", None)),
+                                                                                 shlex.quote(saltfactor),
+                                                                                 saltargs_string,
+                                                                                 saltkwargs_string,
+                                                                                 hardcrash)
+                
+                #self.logger.debug("Debugging Salt-SSH Call\n\t{}".format(super_bad))
+            
+                # This looks bad. It's not the best. Ideally this would use the native salt
+                run_args = {"shell" : True,
+                            "stdout" : subprocess.PIPE,
+                            "cwd" : run_dir,
+                            "executable" : self.kwargs.get("shell", "/bin/bash"),
+                            "timeout" : self.kwargs.get("remote_per_col_timeout", 60)}
+                
+                run_result = subprocess.run(super_bad, **run_args) #nosec 
+                
+            except subprocess.TimeoutExpired as timeout_error:
+                self.logger.error("Collecting {} from {} timed out".format(saltfactor, 
+                                                                           self.kwargs.get("remote_host_id", None)))
+                self.logger.info("Timeout Setting : {}".format(run_args["timeout"]))
+                self.logger.debug("Attempted Command : {}".format(super_bad))
+
             except Exception as salt_ssh_error:
                 self.logger.error("Unable to Run Salt SSH command for {}".format(self.kwargs.get("remote_host_id", None)))
                 self.logger.debug("Error : {}".format(salt_ssh_error))
+                self.logger.debug("Attempted Command : {}".format(super_bad))
+                this_find = None
             else:
-                ## TODO do the needful to pull out the equivalent this_find
-                pass
+                
+                self.logger.debug(run_result.stdout)
+                try:
+                    run_result.check_returncode()
+                except Exception as process_error:
+                    self.logger.error("Unable to Run Salt SSH Command for {}".format(self.kwargs.get("remote_host_id", None)))
+                    self.logger.warning("Error : {}".format(run_result.stderr))
+                    this_find = None
+                else:
+                    # I have Results
+                    try:
+                        returned_results = json.loads(run_result.stdout.decode("utf-8"))
+                        this_find = returned_results[self.kwargs.get("remote_host_id", None)]
+                        
+                    except Exception as read_result_json_error:
+                        self.logger.error("Had Successful Saltssh But an Error when Parsing for {}".format(self.kwargs.get("remote_host_id", None)))
+                        this_find = None
+                    else:
+                        self.logger.debug("Salt-ssh Find : \n{}".format(this_find))
         
         return this_find
 
@@ -410,9 +513,9 @@ class Host:
 
     def getall_collections(self):
 
-        '''
+        """
         Cycles through all configured collections and runs a get_one for each one.
-        '''
+        """
 
         myresults = dict()
 
@@ -447,29 +550,39 @@ class Host:
 
     def gethostmeta(self):
 
-        '''
+        """
         Takes the host metadata given and stores it puts defaults for nothing.
 
         mown
-        '''
+        """
 
         mown_configs = {}
 
-        if isinstance(self.host_configs["uri"], str):
-            # Send My URI In Naked
-            mown_configs = self.host_configs
+        if self.host_configs.get("do_platpi", True) is True:
+            platform_guess = self.do_call("platpi.guess")
+            self.logger.debug("Guessed Platform : {}".format(platform_guess))
         else:
+            platform_guess = {"uri" : "unknown://::::unknown"}
+
+        if isinstance(self.host_configs.get("uri", None), str):
+            # Send My URI In Naked
+            self.logger.debug("URI Given Explicitly Using That")
+            mown_configs = self.host_configs
+        elif isinstance(self.host_configs.get("uri", None), dict):
+            self.logger.debug("URI Args Given in 'broken out' fashion Using That.")
             mown_configs = {**self.host_configs["uri"]}
 
             if "resource" not in self.host_configs.keys():
+                self.logger.warning("Working around missing resource, setting resource to hostname")
                 mown_configs["resource"] = socket.getfqdn()
-
-        if self.host_configs.get("do_aws", True) is True:
-            # If AWS Service Detection is Not Turned Off in Configuration
-            if self.ec2_data["is_ec2"] is True:
-                mown_configs = {"uri" : self.ec2_data["uri"]}
-            else:
-                self.logger.debug("Not Detected as an AWS EC2 Instance.")
+        elif urllib.parse.urlparse(platform_guess.get("uri", "unknown://::::uknown")).scheme != "unknown":
+            # If my Platform Guess Hasn't given me an Unknown Response Use the data
+            # From my Platform Guess
+            self.logger.debug("URI Taken from Platpi Guess")
+            mown_configs = platform_guess["uri"]
+        else:
+            self.logger.warning("No URI/Hostname Given, Using A Naked URI based on Name only")
+            mown_configs["resource"] = socket.getfqdn()
 
         self.logger.debug("MOWN as Configured: {}".format(mown_configs))
 
@@ -481,6 +594,7 @@ class Host:
 
     def get_aws_ec2_data(self, get_collections=False):
 
+        ## TODO Ax This
         '''
         Utilize ec_metadata endpoint to get ec2 Data
         '''
@@ -488,13 +602,17 @@ class Host:
         response_doc = {"is_ec2" : False}
 
 
-        if isinstance(self.host_configs["uri"], dict):
+        if isinstance(self.host_configs.get("uri", None), dict):
             given_args = self.host_configs["uri"].get("arguments", {})
         else:
             given_args = {}
-
+            
         try:
-            ec2_metadata.ec2_metadata.instance_id
+            if self.kwargs.get("remote", False) is False:
+                ec2_metadata.ec2_metadata.instance_id
+            else:
+                raise TypeError("Remote Platform Doesn't Support EC2 Detection.")
+            
         except Exception as ec2_error:
             self.logger.debug("EC2 Instance Detection Failed Likely not AWS : {}".format(ec2_error))
         else:
@@ -614,15 +732,13 @@ class Host:
 
         return basedata
     
-    ## Read Default Grain Evaluator
-
     def ipintel(self):
 
-        '''
+        """
         Get's IPs from the IPV6 and IPV4 collection
 
         Future work, make configuralbe parsing
-        '''
+        """
 
         found_intel = list()
 

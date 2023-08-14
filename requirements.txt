@@ -11,7 +11,7 @@ PyYAML
 pyzmq
 requests
 salt
-tornado==5.1.1
+tornado==6.3.3
 urllib3
 virtualenv
 virtualenv-clone
